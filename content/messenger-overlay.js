@@ -64,60 +64,51 @@ var ShowFirstBodyPart = {
       ShowFirstBodyPart.listener.text = '';      
     },
             
-          onStopRequest : function (aRequest, aContext, aStatusCode) {
-      
+    onStopRequest : function (aRequest, aContext, aStatusCode) {
       var isImap = (ShowFirstBodyPart.folder.server.type == 'imap') ? true : false;
       var date = ShowFirstBodyPart.getOrigDate();
       var originalSub = ShowFirstBodyPart.hdr.mime2DecodedSubject;
-        
-        // we're editing full source
-        var textObj = {};
-        var converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
-          .createInstance(Components.interfaces.nsIScriptableUnicodeConverter); 
-        var text = ShowFirstBodyPart.listener.text;
-        if (ShowFirstBodyPart.hdr.Charset)
-          converter.charset = ShowFirstBodyPart.hdr.Charset;
-        // hdr.Charset will not work with multipart messages, so we must try to extract the charset manually
-        else {
-          try {
-            var textCut = text.substring(text.indexOf('charset=')+8, text.indexOf('charset=')+35);
-            var mailCharset = textCut.match(/[^\s]+/).toString();
-            mailCharset = mailCharset.replace(/\"/g, '');
-            mailCharset = mailCharset.replace(/\'/g, '');
-            converter.charset = mailCharset;
-          }
-          catch(e) {
-            converter.charset = 'UTF-8';
-          }
-        }
+
+      // we're editing full source
+      var textObj = {};
+      var converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
+        .createInstance(Components.interfaces.nsIScriptableUnicodeConverter); 
+      var text = ShowFirstBodyPart.listener.text;
+      if (ShowFirstBodyPart.hdr.Charset) {
+        converter.charset = ShowFirstBodyPart.hdr.Charset;
+      // hdr.Charset will not work with multipart messages, so we must try to extract the charset manually
+      }
+      else {
         try {
-          text = converter.ConvertToUnicode(text);
+          var textCut = text.substring(text.indexOf('charset=')+8, text.indexOf('charset=')+35);
+          var mailCharset = textCut.match(/[^\s]+/).toString();
+          mailCharset = mailCharset.replace(/\"/g, '');
+          mailCharset = mailCharset.replace(/\'/g, '');
+          converter.charset = mailCharset;
         }
-        catch(e) {}
-      
-        textObj.value = text;
-        textObj.charset = converter.charset;
-        window.openDialog('chrome://hdrtoolslite/content/cnghdrs2.xul','','chrome,modal,centerscreen,resizable',textObj);
-        if (textObj.cancel) { // user clicked on "Cancel" button
-          ShowFirstBodyPart.hdr = null;
-          ShowFirstBodyPart.folder = null;
-          return;
+        catch(e) {
+          converter.charset = 'UTF-8';
         }
-        var data = ShowFirstBodyPart.cleanCRLF(textObj.value);
-        try {
-          converter.charset = textObj.charset;
-          data = converter.ConvertFromUnicode(data);
-        }
-        catch(e) {}
-        var dateIsChanged = false;
-        var action = 'bodyChanged';  
+      }
+      try {
+        text = converter.ConvertToUnicode(text);
+      }
+      catch(e) {}
+    
+      var data = ShowFirstBodyPart.cleanCRLF(text);
+      try {
+        data = converter.ConvertFromUnicode(data);
+      }
+      catch(e) {}
+      var dateIsChanged = false;
+      var action = 'bodyChanged';  
 
       // strips off some useless headers
       data = data.replace(/^From - .+\r\n/, '');
       data = data.replace(/X-Mozilla-Status.+\r\n/, '');
       data = data.replace(/X-Mozilla-Status2.+\r\n/, '');
       data = data.replace(/X-Mozilla-Keys.+\r\n/, '');
-        
+      
       if (ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.add_htl_header')) {
         var now = new Date;
         var HTLhead = 'X-HeaderToolsLite: '+action+' - '+now.toString();
@@ -127,18 +118,19 @@ var ShowFirstBodyPart = {
           data = data.replace('\r\n\r\n','\r\n'+HTLhead+'\r\n\r\n');
         else  
           data = data.replace(/\nX-HeaderToolsLite: .+\r\n/,'\n'+HTLhead+'\r\n');
-      }
-            
-      if (! dateIsChanged && isImap && ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix')) {
-        // Some IMAP provider (for ex. GMAIL) doesn't register changes in sorce if the main headers
-        // are not different from an existing message. To work around this limit, the "Date" field is 
-        // modified, if necessary, adding a second to the time (or decreasing a second if second are 59)
-        var newDate = date.replace(/(\d{2}):(\d{2}):(\d{2})/, function (str, p1, p2, p3) {
-          var z = parseInt(p3)+1; 
-          if (z > 59) z = 58;
-          if (z < 10) z = '0'+z.toString(); 
-          return p1+':'+p2+':'+z});
-        data = data.replace(date,newDate);
+       }
+          
+       if (! dateIsChanged && isImap && ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix')) {
+         // Some IMAP provider (for ex. GMAIL) doesn't register changes in sorce if the main headers
+         // are not different from an existing message. To work around this limit, the "Date" field is 
+         // modified, if necessary, adding a second to the time (or decreasing a second if second are 59)
+         var newDate = date.replace(/(\d{2}):(\d{2}):(\d{2})/, function (str, p1, p2, p3) {
+           var z = parseInt(p3)+1; 
+           if (z > 59) z = 58;
+           if (z < 10) z = '0'+z.toString(); 
+           return p1+':'+p2+':'+z
+         });
+         data = data.replace(date,newDate);
       }
 
       // creates the temporary file, where the modified message body will be stored
@@ -177,12 +169,12 @@ var ShowFirstBodyPart = {
       cs.CopyFileMessage(fileSpec, fol, null, false, flags, keys, ShowFirstBodyPart.copyListener, msgWindow);    
     },
   
-           onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
-        var scriptStream = Components.classes['@mozilla.org/scriptableinputstream;1'].
-              createInstance().QueryInterface(Components.interfaces.nsIScriptableInputStream);
-        scriptStream.init(aInputStream);
-        ShowFirstBodyPart.listener.text+=scriptStream.read(scriptStream.available());
-       }        
+    onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
+      var scriptStream = Components.classes['@mozilla.org/scriptableinputstream;1'].
+            createInstance().QueryInterface(Components.interfaces.nsIScriptableInputStream);
+      scriptStream.init(aInputStream);
+      ShowFirstBodyPart.listener.text+=scriptStream.read(scriptStream.available());
+    }        
   },
 
   // copyFileMessage listener
