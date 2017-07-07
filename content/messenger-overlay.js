@@ -6,11 +6,11 @@ var ShowFirstBodyPart = {
   prefs : Components.classes['@mozilla.org/preferences-service;1'].getService(Components.interfaces.nsIPrefBranch),
 
   // parses headers to find the original Date header, not present in nsImsgDbHdr
-  getOrigDate : function() {
+  getOrigDate : function(aText) {
     var dateOrig = '';
     var splitted = null;
     try {
-      var str_message = ShowFirstBodyPart.listener.text;
+      var str_message = aText;
       // This is the end of the headers
       var end = str_message.search(/\r?\n\r?\n/);
       if (str_message.indexOf('\nDate') > -1 && str_message.indexOf('\nDate')  < end)
@@ -32,9 +32,12 @@ var ShowFirstBodyPart = {
     var msguri = gFolderDisplay.selectedMessageUris[0];
     var mms = messenger.messageServiceFromURI(msguri)
       .QueryInterface(Components.interfaces.nsIMsgMessageService);
-    this.hdr = mms.messageURIToMsgHdr(msguri);
-    this.folder = this.hdr.folder;
-    mms.streamMessage(msguri, this.listener, null, null, false, null);
+    var hdr = mms.messageURIToMsgHdr(msguri);
+    var context = {
+      hdr : hdr,
+      folder : hdr.folder
+    };
+    mms.streamMessage(msguri, new ShowFirstBodyPartStreamMessageListener(context), null, null, false, null);
   },
 
   cleanCRLF : function(data) {
@@ -48,8 +51,21 @@ var ShowFirstBodyPart = {
     return newData;
   },
 
-  // streamMessage listener
-  listener : {
+  postActions : function(aContext) {
+    gDBView.selectMsgByKey(aContext.key); // select message with modified headers/source
+    var hdr = aContext.folder.GetMessageHeader(aContext.key);
+    if (hdr.flags & 2)
+      aContext.folder.addMessageDispositionState(hdr,0); //set replied if necessary
+          if (hdr.flags & 4096)
+      aContext.folder.addMessageDispositionState(hdr,1); //set fowarded if necessary
+  }
+};
+
+// streamMessage listener
+function ShowFirstBodyPartStreamMessageListener(aContext) {
+  this.context = aContext;
+}
+ShowFirstBodyPartStreamMessageListener.prototype = {
     QueryInterface : function(iid)  {
                   if (iid.equals(Components.interfaces.nsIStreamListener) ||
                       iid.equals(Components.interfaces.nsISupports))
@@ -64,17 +80,17 @@ var ShowFirstBodyPart = {
     },
 
     onStopRequest : function (aRequest, aContext, aStatusCode) {
-      var isImap = (ShowFirstBodyPart.folder.server.type == 'imap') ? true : false;
-      var date = ShowFirstBodyPart.getOrigDate();
-      var originalSub = ShowFirstBodyPart.hdr.mime2DecodedSubject;
+      var isImap = (this.context.folder.server.type == 'imap') ? true : false;
+      var date = ShowFirstBodyPart.getOrigDate(this.text);
+      var originalSub = this.context.hdr.mime2DecodedSubject;
 
       // we're editing full source
       var textObj = {};
       var converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
         .createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
       var text = this.text;
-      if (ShowFirstBodyPart.hdr.Charset) {
-        converter.charset = ShowFirstBodyPart.hdr.Charset;
+      if (this.context.hdr.Charset) {
+        converter.charset = this.context.hdr.Charset;
       // hdr.Charset will not work with multipart messages, so we must try to extract the charset manually
       }
       else {
@@ -144,11 +160,11 @@ var ShowFirstBodyPart = {
       foStream.write(data,data.length);
       foStream.close();
 
-      var flags =  ShowFirstBodyPart.hdr.flags;
-      var keys =  ShowFirstBodyPart.hdr.getStringProperty('keywords');
+      var flags =  this.context.hdr.flags;
+      var keys =  this.context.hdr.getStringProperty('keywords');
 
-      ShowFirstBodyPart.list = Components.classes['@mozilla.org/array;1'].createInstance(Components.interfaces.nsIMutableArray);
-      ShowFirstBodyPart.list.appendElement(ShowFirstBodyPart.hdr, false);
+      this.context.list = Components.classes['@mozilla.org/array;1'].createInstance(Components.interfaces.nsIMutableArray);
+      this.context.list.appendElement(this.context.hdr, false);
 
       // this is interesting: nsIMsgFolder.copyFileMessage seems to have a bug on Windows, when
       // the nsIFile has been already used by foStream (because of Windows lock system?), so we
@@ -156,16 +172,16 @@ var ShowFirstBodyPart = {
       var fileSpec = Components.classes['@mozilla.org/file/local;1']
         .createInstance(Components.interfaces.nsILocalFile);
       fileSpec.initWithPath(tempFile.path);
-      var fol = ShowFirstBodyPart.hdr.folder;
+      var fol = this.context.hdr.folder;
       var extService = Components.classes['@mozilla.org/uriloader/external-helper-app-service;1']
         .getService(Components.interfaces.nsPIExternalAppLauncher)
       extService.deleteTemporaryFileOnExit(fileSpec); // function's name says all!!!
-      ShowFirstBodyPart.noTrash = ! (ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.putOriginalInTrash'))
+      this.context.noTrash = ! (ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.putOriginalInTrash'))
       // Moved in copyListener.onStopCopy
-      // ShowFirstBodyPart.folder.deleteMessages(ShowFirstBodyPart.list,null,noTrash,true,null,false);
+      // this.context.folder.deleteMessages(this.context.list,null,noTrash,true,null,false);
       var cs = Components.classes['@mozilla.org/messenger/messagecopyservice;1']
                           .getService(Components.interfaces.nsIMsgCopyService);
-      cs.CopyFileMessage(fileSpec, fol, null, false, flags, keys, ShowFirstBodyPart.copyListener, msgWindow);
+      cs.CopyFileMessage(fileSpec, fol, null, false, flags, keys, new ShowFirstBodyPartCopyListener(this.context), msgWindow);
     },
 
     onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
@@ -174,10 +190,13 @@ var ShowFirstBodyPart = {
       scriptStream.init(aInputStream);
       this.text += scriptStream.read(scriptStream.available());
     }
-  },
+};
 
-  // copyFileMessage listener
-  copyListener : {
+// copyFileMessage listener
+function ShowFirstBodyPartCopyListener(aContext) {
+  this.context = aContext;
+}
+ShowFirstBodyPartCopyListener.prototype = {
     QueryInterface : function(iid) {
       if (iid.equals(Components.interfaces.nsIMsgCopyServiceListener) ||
       iid.equals(Components.interfaces.nsISupports))
@@ -191,34 +210,29 @@ var ShowFirstBodyPart = {
     OnStartCopy: function () {},
     OnStopCopy: function (status) {
       if (status == 0) // copy done
-        ShowFirstBodyPart.folder.deleteMessages(ShowFirstBodyPart.list,null,ShowFirstBodyPart.noTrash,true,null,false);
+        this.context.folder.deleteMessages(this.context.list, null, this.context.noTrash, true, null, false);
     },
     SetMessageKey: function (key) {
+      this.context.key = key;
       // at this point, the message is already stored in local folders, but not yet in remote folders,
       // so for remote folders we use a folderListener
-      if (ShowFirstBodyPart.folder.server.type == 'imap' || ShowFirstBodyPart.folder.server.type == 'news') {
+      if (this.context.folder.server.type == 'imap' || this.context.folder.server.type == 'news') {
+        let folderListener = new ShowFirstBodyPartFolderListener(this.context)
+        this.context.URI = this.context.folder.URI;
         Components.classes['@mozilla.org/messenger/services/session;1']
                   .getService(Components.interfaces.nsIMsgMailSession)
-                  .AddFolderListener(ShowFirstBodyPart.folderListener, Components.interfaces.nsIFolderListener.all);
-        ShowFirstBodyPart.folderListener.key = key;
-        ShowFirstBodyPart.folderListener.URI = ShowFirstBodyPart.folder.URI;
+                  .AddFolderListener(folderListener, Components.interfaces.nsIFolderListener.all);
       }
       else
-        setTimeout(function() {ShowFirstBodyPart.postActions(key);}, 500);
+        setTimeout(function() { ShowFirstBodyPart.postActions(this.context); }, 500);
     }
-  },
+};
 
-  postActions : function(key) {
-    gDBView.selectMsgByKey(key); // select message with modified headers/source
-    var hdr = ShowFirstBodyPart.folder.GetMessageHeader(key);
-    if (hdr.flags & 2)
-      ShowFirstBodyPart.folder.addMessageDispositionState(hdr,0); //set replied if necessary
-          if (hdr.flags & 4096)
-      ShowFirstBodyPart.folder.addMessageDispositionState(hdr,1); //set fowarded if necessary
-  },
-
-  // used just for remote folders
-  folderListener  : {
+// used just for remote folders
+function ShowFirstBodyPartFolderListener(aContext) {
+  this.context = aContext;
+}
+ShowFirstBodyPartFolderListener.prototype = {
     OnItemAdded: function(parentItem, item, view) {
       try {
         var hdr = item.QueryInterface(Components.interfaces.nsIMsgDBHdr);
@@ -227,11 +241,11 @@ var ShowFirstBodyPart = {
                  return;
       }
       if (this.key == hdr.messageKey && this.URI == hdr.folder.URI) {
-        ShowFirstBodyPart.postActions(this.key);
+        ShowFirstBodyPart.postActions(this.context);
         // we don't need anymore the folderListener
          Components.classes['@mozilla.org/messenger/services/session;1']
                       .getService(Components.interfaces.nsIMsgMailSession)
-                      .RemoveFolderListener(ShowFirstBodyPart.folderListener);
+                      .RemoveFolderListener(this);
       }
     },
     OnItemRemoved: function(parentItem, item, view) {},
@@ -241,7 +255,6 @@ var ShowFirstBodyPart = {
     OnItemUnicharPropertyChanged: function(item, property, oldValue, newValue){},
     OnItemPropertyFlagChanged: function(item, property, oldFlag, newFlag) {},
     OnItemEvent: function(folder, event) {}
-  }
 };
 
 
