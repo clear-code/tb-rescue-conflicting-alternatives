@@ -194,7 +194,7 @@ Content-Disposition: attachment;
     load : function(aURI) {
       var mms = messenger.messageServiceFromURI(aURI).QueryInterface(Ci.nsIMsgMessageService);
       this.context.hdr = mms.messageURIToMsgHdr(aURI);
-      this.context.folder : this.context.hdr.folder;
+      this.context.folder = this.context.hdr.folder;
       return new Promise((aResolve, aReject) => {
         this._resolver = aResolve;
         this._rejector = aReject;
@@ -307,7 +307,7 @@ Content-Disposition: attachment;
   }
   RemoteFolderWatcher.prototype = {
     waitUntilAdded : function() {
-      return new Promise((aResolve, aReject) {
+      return new Promise((aResolve, aReject) => {
         this._resolver = aResolve;
         this._rejector = aReject;
         Cc['@mozilla.org/messenger/services/session;1'].getService(Ci.nsIMsgMailSession).AddFolderListener(this, Ci.nsIFolderListener.all);
