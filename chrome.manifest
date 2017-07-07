@@ -1,0 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+content	show-first-body-part	content/
+
+overlay	chrome://messenger/content/messenger.xul	chrome://show-first-body-part/content/messenger-overlay.xul
+#overlay	chrome://messenger/content/messageWindow.xul	chrome://show-first-body-part/content/messenger-overlay.xul
+#resource	show-first-body-part-modules	modules/
