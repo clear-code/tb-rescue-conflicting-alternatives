@@ -1,3 +1,5 @@
+// Original codes to read and write message data to a folder are from Header Tools Lite.
+// See: https://addons.mozilla.org/thunderbird/addon/header-tools-lite/
 (function(aGlobal) {
   const Cc = Components.classes;
   const Ci = Components.interfaces;
