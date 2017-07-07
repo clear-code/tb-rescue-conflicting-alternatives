@@ -4,109 +4,6 @@ var ShowFirstBodyPart = {
 	folder : null,	
 	hdr : null,
 	prefs : Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch),
-	bundle : Components.classes["@mozilla.org/intl/stringbundle;1"].getService(Components.interfaces.nsIStringBundleService).createBundle("chrome://hdrtoolslite/locale/hdrtools.properties"),
-
-	// called loading dialog for changing headers details
-	initDialog : function() {
-		// window.arguments[0] is an object with date,subject,author and recipients as strings
-		var date1 = window.arguments[0].date.substring(0,3);
-		for (var i=1;i<8;i++) {
-			if (document.getElementById("date3").menupopup.childNodes[i].label == date1) {
-				document.getElementById("date3").selectedIndex = i;	
-				date1 = null;
-				break;
-			}
-		}
-		if (! date1)
-			document.getElementById("dateBox").value = window.arguments[0].date.substring(5);
-		else 			
-			document.getElementById("dateBox").value = window.arguments[0].date;
-		document.getElementById("subBox").value = window.arguments[0].subject;
-		document.getElementById("authBox").value = window.arguments[0].author;
-		document.getElementById("recBox").value = window.arguments[0].recipients;
-		document.getElementById("replytoBox").value = window.arguments[0].replyto;
-		document.getElementById("midBox").value = window.arguments[0].mid;
-		document.getElementById("refBox").value = window.arguments[0].ref;
-		window.sizeToContent();
-	},
-
-	// called closing dialog for changing headers details
-	exitDialog : function(cancel) {
-		window.arguments[0].cancel = cancel;
-		if (cancel)  // user clicked on "Cancel" button
-			return true;
-
-		if (document.getElementById("date3").selectedIndex > 0) 
-			var dateValue = document.getElementById("date3").selectedItem.label+", "+document.getElementById("dateBox").value;
-		else 	
-			var dateValue = document.getElementById("dateBox").value;
-
-		/*
-		if (! dateValue.match(/^.{3}\,/)) {
-			alert(ShowFirstBodyPart.bundle.GetStringFromName("wrongDate"));
-			return false;
-		}*/
-		window.arguments[0].date = dateValue;
-		window.arguments[0].subject = document.getElementById("subBox").value;
-		window.arguments[0].author = document.getElementById("authBox").value;
-		window.arguments[0].recipients = document.getElementById("recBox").value;
-		window.arguments[0].replyto = document.getElementById("replytoBox").value;
-		window.arguments[0].mid = document.getElementById("midBox").value;
-		window.arguments[0].ref = document.getElementById("refBox").value;
-		return true;
-	},
-
-	// called loading dialog for editing full source, that is in window.arguments[0].value
-	initDialog2 : function() {
-		document.getElementById("editFSarea").focus();
-		var limit = ShowFirstBodyPart.prefs.getIntPref("extensions.hdrtoolslite.fullsource_maxchars");
-		ShowFirstBodyPart.full = window.arguments[0].value.length;
-		if (limit > -1 &&  ShowFirstBodyPart.full > limit) {
-			var text =  window.arguments[0].value.substring(0,limit);
-			document.getElementById("FS_button").removeAttribute("collapsed");
-			var percent = parseInt((limit/ShowFirstBodyPart.full)*100);
-		}
-		else {
-			var text =  window.arguments[0].value;
-			var percent = 100;
-		}
-		document.getElementById("sourcePercent").value = document.getElementById("sourcePercent").value.replace("§", percent);
-		// dialog will hang with too big vaue for textbox on slow machines
-		document.getElementById("editFSarea").setAttribute("limit", limit);
-		document.getElementById("charsetBox").value = window.arguments[0].charset;
-		setTimeout(function() {
-			document.getElementById("editFSarea").value = text;
-			// move the cursor at the beginning of the text
-			document.getElementById("editFSarea").setSelectionRange(0,0);
-			window.sizeToContent();
-		}, 300);
-	},
-
-	showFullSource : function() {
-		if (confirm(ShowFirstBodyPart.bundle.GetStringFromName("fsBigMessage"))) {
-			document.getElementById("editFSarea").setAttribute("limit", "-1");
-			document.getElementById("editFSarea").value = "";
-			document.getElementById("editFSarea").value = window.arguments[0].value;
-			document.getElementById("FS_button").collapsed = true;
-			document.getElementById("sourcePercent").value = document.getElementById("sourcePercent").value.replace(/\d+\%/, "100%");
-		}
-	},
-
-	// called closing dialog for editing full source
-	exitDialog2 : function(cancel) {
-		window.arguments[0].cancel = cancel;
-		if (! cancel) {
-			var limit = document.getElementById("editFSarea").getAttribute("limit");
-			if (limit > -1) {
-				var fullSource = window.arguments[0].value.substring(limit);
-				fullSource =  document.getElementById("editFSarea").value + fullSource;
-			}
-			else
-				var fullSource = document.getElementById("editFSarea").value;
-			window.arguments[0].value = fullSource;
-			window.arguments[0].charset = document.getElementById("charsetBox").value;
-		}
-	},
 
 	// parses headers to find the original Date header, not present in nsImsgDbHdr
 	getOrigDate : function() {
@@ -130,26 +27,8 @@ var ShowFirstBodyPart = {
 		return dateOrig;
 	},
 	
-	// start changing headers details
-	edit: function() {
-		var msguri = gFolderDisplay.selectedMessageUris[0];
-		var mms = messenger.messageServiceFromURI(msguri)
-			.QueryInterface(Components.interfaces.nsIMsgMessageService);
-		ShowFirstBodyPart.hdr = mms.messageURIToMsgHdr(msguri);
-		ShowFirstBodyPart.folder = ShowFirstBodyPart.hdr.folder;
-		ShowFirstBodyPart.listener.fullSource = false;
-		mms.streamMessage(msguri, ShowFirstBodyPart.listener, null, null, false, null);	
-	},
-
 	// start editing full source
 	editFS: function() {
-		if (ShowFirstBodyPart.prefs.getBoolPref("extensions.hdrtoolslite.editFullSourceWarning")) {
-			var promptService = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
-                              .getService(Components.interfaces.nsIPromptService);
-			var check = {value: false}; 
-			promptService.alertCheck(null,"HeaderToolsLite", ShowFirstBodyPart.bundle.GetStringFromName("fsWarning"),ShowFirstBodyPart.bundle.GetStringFromName("dontShowAgain"), check);
-			ShowFirstBodyPart.prefs.setBoolPref("extensions.hdrtoolslite.editFullSourceWarning", ! check.value);
-		}
 		var msguri = gFolderDisplay.selectedMessageUris[0];
 		var mms = messenger.messageServiceFromURI(msguri)
 			.QueryInterface(Components.interfaces.nsIMsgMessageService);
@@ -191,7 +70,6 @@ var ShowFirstBodyPart = {
 			var date = ShowFirstBodyPart.getOrigDate();
 			var originalSub = ShowFirstBodyPart.hdr.mime2DecodedSubject;
 				
-			if (ShowFirstBodyPart.listener.fullSource) {
 				// we're editing full source
 				var textObj = {};
 				var converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
@@ -233,107 +111,6 @@ var ShowFirstBodyPart = {
 				catch(e) {}
 				var dateIsChanged = false;
 				var action = "bodyChanged";	
-			}
-			else {
-				// we're just changing headers details
-				var newHdr = {};
-				newHdr.author = ShowFirstBodyPart.hdr.mime2DecodedAuthor;
-				newHdr.recipients = ShowFirstBodyPart.hdr.mime2DecodedRecipients;
-				if (ShowFirstBodyPart.hdr.flags & 0x0010) 
-					// in replies the subject returned by mime2DecodedSubject has no initial "Re:"
-					originalSub ="Re: "+ originalSub;
-				newHdr.subject = originalSub;
-				newHdr.date = date;
-				newHdr.replyto = ShowFirstBodyPart.hdr.getStringProperty("replyTo");
-				if (ShowFirstBodyPart.hdr.messageId)
-					newHdr.mid = "<"+ShowFirstBodyPart.hdr.messageId+">";
-				newHdr.ref = "";
-				var refs = ShowFirstBodyPart.hdr.numReferences;
-				if (refs > 0)
-					newHdr.ref = "<"+ShowFirstBodyPart.hdr.getStringReference(0)+">";
-				for (var i=1;i<refs;i++)
-					newHdr.ref = newHdr.ref + " <" + ShowFirstBodyPart.hdr.getStringReference(i)+">";
-
-				window.openDialog('chrome://hdrtoolslite/content/cnghdrs.xul',"","chrome,modal,centerscreen,resizable ",newHdr);
-
-				if (newHdr.cancel) 
-					return;
-			
-				// encodes the headers in UTF-8. I couldn't use message charset, because sometimes it's null
-				var mimeEncoder = Components.classes["@mozilla.org/messenger/mimeconverter;1"]
-					.getService(Components.interfaces.nsIMimeConverter);
-				var newSubEnc = mimeEncoder.encodeMimePartIIStr_UTF8(newHdr.subject, false, "UTF-8", 0, 72);
-				var newAuthEnc = mimeEncoder.encodeMimePartIIStr_UTF8(newHdr.author, true, "UTF-8", 0, 72);		
-				var newRecEnc = mimeEncoder.encodeMimePartIIStr_UTF8(newHdr.recipients, true, "UTF-8", 0, 72);
-				if (newHdr.replyto)
-					var newReplytoEnc = mimeEncoder.encodeMimePartIIStr_UTF8(newHdr.replyto, true, "UTF-8", 0, 72);
-				else
-					var newReplytoEnc = null;
-			
-				var data = ShowFirstBodyPart.cleanCRLF(ShowFirstBodyPart.listener.text);
-				var endHeaders = data.search(/\r\n\r\n/);
-				var headers = data.substring(0,endHeaders);
-
-				// unfold headers, if necessary
-				while(headers.match(/\r\nSubject: .*\r\n\s+/))
-					headers = headers.replace(/(\r\nSubject: .*)(\r\n\s+)/, "$1 ");
-				while(headers.match(/\r\nFrom: .*\r\n\s+/))
-					headers = headers.replace(/(\r\nFrom: .*)(\r\n\s+)/, "$1 ");
-				while(headers.match(/\r\nTo: .*\r\n\s+/))
-					headers = headers.replace(/(\r\nTo: .*)(\r\n\s+)/, "$1 ");
-				
-				// This will be removed after the if-else_if-else series, it will make easier to test headers
-				headers = "\n"+headers+"\r\n";
-				
-				// check also lowercase headers, used for example by SOGO
-				if (headers.indexOf("\nSubject:") > -1)
-					headers = headers.replace(/\nSubject: *.*\r\n/, "\nSubject: "+ newSubEnc+"\r\n");
-				else if (headers.indexOf("\nsubject:") > -1)
-					headers = headers.replace(/\nsubject: *.*\r\n/, "\nsubject: "+ newSubEnc+"\r\n");
-				else // header missing
-					headers = headers+("Subject: "+newSubEnc+"\r\n");
-				if (headers.indexOf("\nFrom:") > -1)
-					headers = headers.replace(/\nFrom: *.*\r\n/, "\nFrom: "+ newAuthEnc+"\r\n");
-				else if (headers.indexOf("\nfrom:") > -1)
-					headers = headers.replace(/\nfrom: *.*\r\n/, "\nfrom: "+ newAuthEnc+"\r\n");
-				else // header missing
-					headers = headers+("From: "+newAuthEnc+"\r\n");
-				if (headers.indexOf("\nTo:") > -1)
-					headers = headers.replace(/\nTo: *.*\r\n/, "\nTo: "+ newRecEnc+"\r\n");
-				else if (headers.indexOf("\nto:") > -1)
-					headers = headers.replace(/\nto: *.*\r\n/, "\nto: "+ newRecEnc+"\r\n");
-				else // header missing
-					headers = headers+("To: "+newRecEnc+"\r\n");
-				if (headers.indexOf("\nDate:") > -1)
-					headers = headers.replace(/\nDate: *.*\r\n/, "\nDate: "+newHdr.date+"\r\n");
-				else if (headers.indexOf("\ndate:") > -1)
-					headers = headers.replace(/\ndate: *.*\r\n/, "\ndate: "+ newHdr.date+"\r\n");
-				else // header missing
-					headers = headers+("Date: "+newHdr.date+"\r\n");
-				if (headers.indexOf("\nMessage-ID:") > -1)
-					headers = headers.replace(/\nMessage-ID: *.*\r\n/, "\nMessage-ID: "+newHdr.mid+"\r\n");
-				else if (newHdr.mid) { // header missing 
-					var newMid = (newHdr.mid.substring(0,1) == "<") ? newHdr.mid : "<"+newHdr.mid+">";
-					headers = headers+("Message-ID: "+newMid+"\r\n");
-				}
-				if (headers.indexOf("\nReferences:") > -1)
-					headers = headers.replace(/\nReferences: *.*\r\n/, "\nReferences: "+newHdr.ref+"\r\n");
-				else if (newHdr.ref) // header missing
-					headers = headers+("References: "+newHdr.ref+"\r\n");
-				if (newReplytoEnc) {
-					if (headers.indexOf("Reply-To:") > -1)
-						headers = headers.replace(/\nReply\-To: *.*\r\n/, "\nReply-To: "+newHdr.replyto+"\r\n");
-					if (headers.indexOf("reply-to:") > -1)
-						headers = headers.replace(/\nreply\-to: *.*\r\n/, "\nreply-to: "+newHdr.replyto+"\r\n");
-					else // header missing
-						headers = headers+("Reply-To: "+newHdr.replyto+"\r\n");
-				} 
-				
-				// strips off characters added in line 292
-				headers = headers.substring(1,headers.length-2);
-				data = headers + data.substring(endHeaders);
-				var action = "headerChanged";
-			}
 
 			// strips off some useless headers
 			data = data.replace(/^From - .+\r\n/, "");
@@ -473,33 +250,6 @@ var ShowFirstBodyPart = {
 		OnItemUnicharPropertyChanged: function(item, property, oldValue, newValue){},
 		OnItemPropertyFlagChanged: function(item, property, oldFlag, newFlag) {},
 		OnItemEvent: function(folder, event) {}
-	},
-	
-	init : function() {
-		var shortcut1, shortcut2 = null;
-		try {
-			shortcut1 = ShowFirstBodyPart.prefs.getCharPref("extensions.hdrtoolslite.edit_shortcut");
-			shortcut2 = ShowFirstBodyPart.prefs.getCharPref("extensions.hdrtoolslite.editFS_shortcut");
-		}
-		catch(e) {}
-		if (shortcut1) {
-			var key1 = document.createElement("key");
-			key1.setAttribute("key", shortcut1);
-			key1.setAttribute("modifiers", "control");
-			key1.setAttribute("id", "headerToolsLightkey1");
-			key1.setAttribute("command", "headerToolsLightedit");
-			document.getElementById("headerToolsLightkeyset").appendChild(key1);
-			document.getElementById("headerToolsLightModify1").setAttribute("key", "headerToolsLightkey1");
-		}
-		if (shortcut2) {
-			var key2 = document.createElement("key");
-			key2.setAttribute("key", shortcut2);
-			key2.setAttribute("modifiers", "control");
-			key2.setAttribute("id", "headerToolsLightkey2");
-			key2.setAttribute("command", "headerToolsLighteditFS");
-			document.getElementById("headerToolsLightkeyset").appendChild(key2);
-			document.getElementById("headerToolsLightModify2").setAttribute("key", "headerToolsLightkey2");
-		}    
 	}
 };
 
