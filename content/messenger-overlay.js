@@ -1,9 +1,3 @@
-/* This extension is a simplified version of TB_Header_Tools of Frank DiLecce (a genius!)
-It follows the same logic, but the code is totally rewritten, so that in future it will be easier
-to maintain it for everyone. Moreover it doesn't affect any Thunderbird native functions and
-so it shouldn't give any compatibility problems.
-*/
-
 var ShowFirstBodyPart = {
 	
 	// global variables
