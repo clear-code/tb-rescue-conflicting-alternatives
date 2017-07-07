@@ -186,7 +186,10 @@
   ShowFirstBodyPartCopyListener.prototype = {
     QueryInterface : function(iid) {
       if (iid.equals(Ci.nsIMsgCopyServiceListener) ||
-          iid.equals(Ci, true, null, false);
+          iid.equals(Ci, true, null, false))
+        return this;
+
+      throw Components.results.NS_NOINTERFACE;
     },
     SetMessageKey: function (key) {
       this.context.key = key;
