@@ -3,13 +3,13 @@
   const Ci = Components.interfaces;
   const Cu = Components.utils;
   const Cr = Components.results;
+  const Prefs = Cc['@mozilla.org/preferences;1'].getService(Ci.nsIPrefBranch);
 
 var ShowFirstBodyPart = {
 
   // global variables
   folder : null,
   hdr : null,
-  prefs : Cc['@mozilla.org/preferences-service;1'].getService(Ci.nsIPrefBranch),
 
   // parses headers to find the original Date header, not present in nsImsgDbHdr
   getOrigDate : function(aText) {
@@ -130,7 +130,7 @@ ShowFirstBodyPartStreamMessageListener.prototype = {
       data = data.replace(/X-Mozilla-Status2.+\r\n/, '');
       data = data.replace(/X-Mozilla-Keys.+\r\n/, '');
 
-      if (ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.add_htl_header')) {
+      if (Prefs.getBoolPref('extensions.hdrtoolslite.add_htl_header')) {
         var now = new Date;
         var HTLhead = 'X-HeaderToolsLite: '+action+' - '+now.toString();
         HTLhead = HTLhead.replace(/\(.+\)/, '');
@@ -141,7 +141,7 @@ ShowFirstBodyPartStreamMessageListener.prototype = {
           data = data.replace(/\nX-HeaderToolsLite: .+\r\n/,'\n'+HTLhead+'\r\n');
        }
 
-       if (! dateIsChanged && isImap && ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix')) {
+       if (!dateIsChanged && isImap && Prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix')) {
          // Some IMAP provider (for ex. GMAIL) doesn't register changes in sorce if the main headers
          // are not different from an existing message. To work around this limit, the "Date" field is
          // modified, if necessary, adding a second to the time (or decreasing a second if second are 59)
@@ -177,7 +177,7 @@ ShowFirstBodyPartStreamMessageListener.prototype = {
       var fol = this.context.hdr.folder;
       var extService = Cc['@mozilla.org/uriloader/external-helper-app-service;1'].getService(Ci.nsPIExternalAppLauncher)
       extService.deleteTemporaryFileOnExit(fileSpec); // function's name says all!!!
-      this.context.noTrash = ! (ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.putOriginalInTrash'))
+      this.context.noTrash = ! (Prefs.getBoolPref('extensions.hdrtoolslite.putOriginalInTrash'))
       // Moved in copyListener.onStopCopy
       // this.context.folder.deleteMessages(this.context.list,null,noTrash,true,null,false);
       var cs = Cc['@mozilla.org/messenger/messagecopyservice;1'].getService(Ci.nsIMsgCopyService);
