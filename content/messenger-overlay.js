@@ -5,70 +5,70 @@
   const Cr = Components.results;
   const Prefs = Cc['@mozilla.org/preferences;1'].getService(Ci.nsIPrefBranch);
 
-var ShowFirstBodyPart = {
-  // parses headers to find the original Date header, not present in nsImsgDbHdr
-  getOrigDate : function(aText) {
-    var dateOrig = '';
-    var splitted = null;
-    try {
-      var str_message = aText;
-      // This is the end of the headers
-      var end = str_message.search(/\r?\n\r?\n/);
-      if (str_message.indexOf('\nDate') > -1 && str_message.indexOf('\nDate') < end) {
-        splitted =str_message.split('\nDate:');
+  var ShowFirstBodyPart = {
+    // parses headers to find the original Date header, not present in nsImsgDbHdr
+    getOrigDate : function(aText) {
+      var dateOrig = '';
+      var splitted = null;
+      try {
+        var str_message = aText;
+        // This is the end of the headers
+        var end = str_message.search(/\r?\n\r?\n/);
+        if (str_message.indexOf('\nDate') > -1 && str_message.indexOf('\nDate') < end) {
+          splitted =str_message.split('\nDate:');
+        }
+        else if (str_message.indexOf('\ndate') > -1 && str_message.indexOf('\ndate') < end) {
+          splitted =str_message.split('\ndate:');
+        }
+        if (splitted) {
+          dateOrig = splitted[1].split('\n')[0];
+          dateOrig = dateOrig.replace(/ +$/, '');
+          dateOrig = dateOrig.replace(/^ +/, '');
+        }
       }
-      else if (str_message.indexOf('\ndate') > -1 && str_message.indexOf('\ndate') < end) {
-        splitted =str_message.split('\ndate:');
+      catch(e) {}
+      return dateOrig;
+    },
+
+    editFS: function() {
+      var msguri = gFolderDisplay.selectedMessageUris[0];
+      var mms = messenger.messageServiceFromURI(msguri).QueryInterface(Ci.nsIMsgMessageService);
+      var hdr = mms.messageURIToMsgHdr(msguri);
+      var context = {
+        hdr : hdr,
+        folder : hdr.folder
+      };
+      mms.streamMessage(msguri, new ShowFirstBodyPartStreamMessageListener(context), null, null, false, null);
+    },
+
+    cleanCRLF : function(data) {
+      /* This function forces all newline as CRLF; this is useful for some reasons
+      1) this will make the message RFC2822 compliant
+      2) this will fix some problems with IMAP servers that don't accept mixed newlines
+      3) this will make easier to use regexps
+      */
+      var newData = data.replace(/\r/g, '');
+      newData = newData.replace(/\n/g, '\r\n');
+      return newData;
+    },
+
+    postActions : function(aContext) {
+      gDBView.selectMsgByKey(aContext.key); // select message with modified headers/source
+      var hdr = aContext.folder.GetMessageHeader(aContext.key);
+      if (hdr.flags & 2) {
+        aContext.folder.addMessageDispositionState(hdr, 0); //set replied if necessary
       }
-      if (splitted) {
-        dateOrig = splitted[1].split('\n')[0];
-        dateOrig = dateOrig.replace(/ +$/, '');
-        dateOrig = dateOrig.replace(/^ +/, '');
+      if (hdr.flags & 4096) {
+        aContext.folder.addMessageDispositionState(hdr, 1); //set fowarded if necessary
       }
     }
-    catch(e) {}
-    return dateOrig;
-  },
+  };
 
-  editFS: function() {
-    var msguri = gFolderDisplay.selectedMessageUris[0];
-    var mms = messenger.messageServiceFromURI(msguri).QueryInterface(Ci.nsIMsgMessageService);
-    var hdr = mms.messageURIToMsgHdr(msguri);
-    var context = {
-      hdr : hdr,
-      folder : hdr.folder
-    };
-    mms.streamMessage(msguri, new ShowFirstBodyPartStreamMessageListener(context), null, null, false, null);
-  },
-
-  cleanCRLF : function(data) {
-    /* This function forces all newline as CRLF; this is useful for some reasons
-    1) this will make the message RFC2822 compliant
-    2) this will fix some problems with IMAP servers that don't accept mixed newlines
-    3) this will make easier to use regexps
-    */
-    var newData = data.replace(/\r/g, '');
-    newData = newData.replace(/\n/g, '\r\n');
-    return newData;
-  },
-
-  postActions : function(aContext) {
-    gDBView.selectMsgByKey(aContext.key); // select message with modified headers/source
-    var hdr = aContext.folder.GetMessageHeader(aContext.key);
-    if (hdr.flags & 2) {
-      aContext.folder.addMessageDispositionState(hdr, 0); //set replied if necessary
-    }
-    if (hdr.flags & 4096) {
-      aContext.folder.addMessageDispositionState(hdr, 1); //set fowarded if necessary
-    }
+  // streamMessage listener
+  function ShowFirstBodyPartStreamMessageListener(aContext) {
+    this.context = aContext;
   }
-};
-
-// streamMessage listener
-function ShowFirstBodyPartStreamMessageListener(aContext) {
-  this.context = aContext;
-}
-ShowFirstBodyPartStreamMessageListener.prototype = {
+  ShowFirstBodyPartStreamMessageListener.prototype = {
     QueryInterface : function(iid)  {
       if (iid.equals(Ci.nsIStreamListener) ||
           iid.equals(Ci.nsISupports))
@@ -184,13 +184,13 @@ ShowFirstBodyPartStreamMessageListener.prototype = {
       scriptStream.init(aInputStream);
       this.text += scriptStream.read(scriptStream.available());
     }
-};
+  };
 
-// copyFileMessage listener
-function ShowFirstBodyPartCopyListener(aContext) {
-  this.context = aContext;
-}
-ShowFirstBodyPartCopyListener.prototype = {
+  // copyFileMessage listener
+  function ShowFirstBodyPartCopyListener(aContext) {
+    this.context = aContext;
+  }
+  ShowFirstBodyPartCopyListener.prototype = {
     QueryInterface : function(iid) {
       if (iid.equals(Ci.nsIMsgCopyServiceListener) ||
           iid.equals(Ci, true, null, false);
@@ -210,13 +210,13 @@ ShowFirstBodyPartCopyListener.prototype = {
         }, 500);
       }
     }
-};
+  };
 
-// used just for remote folders
-function ShowFirstBodyPartFolderListener(aContext) {
-  this.context = aContext;
-}
-ShowFirstBodyPartFolderListener.prototype = {
+  // used just for remote folders
+  function ShowFirstBodyPartFolderListener(aContext) {
+    this.context = aContext;
+  }
+  ShowFirstBodyPartFolderListener.prototype = {
     OnItemAdded: function(parentItem, item, view) {
       try {
         var hdr = item.QueryInterface(Ci.nsIMsgDBHdr);
@@ -237,6 +237,6 @@ ShowFirstBodyPartFolderListener.prototype = {
     OnItemUnicharPropertyChanged: function(item, property, oldValue, newValue){},
     OnItemPropertyFlagChanged: function(item, property, oldFlag, newFlag) {},
     OnItemEvent: function(folder, event) {}
-};
+  };
 
 })(this);
