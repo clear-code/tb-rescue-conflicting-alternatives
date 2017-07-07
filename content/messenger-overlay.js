@@ -6,11 +6,6 @@
   const Prefs = Cc['@mozilla.org/preferences;1'].getService(Ci.nsIPrefBranch);
 
 var ShowFirstBodyPart = {
-
-  // global variables
-  folder : null,
-  hdr : null,
-
   // parses headers to find the original Date header, not present in nsImsgDbHdr
   getOrigDate : function(aText) {
     var dateOrig = '';
