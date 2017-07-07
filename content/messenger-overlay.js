@@ -34,7 +34,6 @@ var ShowFirstBodyPart = {
       .QueryInterface(Components.interfaces.nsIMsgMessageService);
     ShowFirstBodyPart.hdr = mms.messageURIToMsgHdr(msguri);
     ShowFirstBodyPart.folder = ShowFirstBodyPart.hdr.folder;
-    ShowFirstBodyPart.listener.fullSource = true;
     mms.streamMessage(msguri, ShowFirstBodyPart.listener, null, null, false, null);      
   },
 
