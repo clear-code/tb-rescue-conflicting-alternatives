@@ -32,9 +32,9 @@ var ShowFirstBodyPart = {
     var msguri = gFolderDisplay.selectedMessageUris[0];
     var mms = messenger.messageServiceFromURI(msguri)
       .QueryInterface(Components.interfaces.nsIMsgMessageService);
-    ShowFirstBodyPart.hdr = mms.messageURIToMsgHdr(msguri);
-    ShowFirstBodyPart.folder = ShowFirstBodyPart.hdr.folder;
-    mms.streamMessage(msguri, ShowFirstBodyPart.listener, null, null, false, null);
+    this.hdr = mms.messageURIToMsgHdr(msguri);
+    this.folder = this.hdr.folder;
+    mms.streamMessage(msguri, this.listener, null, null, false, null);
   },
 
   cleanCRLF : function(data) {
@@ -60,7 +60,7 @@ var ShowFirstBodyPart = {
           },
 
           onStartRequest : function (aRequest, aContext) {
-      ShowFirstBodyPart.listener.text = '';
+      this.text = '';
     },
 
     onStopRequest : function (aRequest, aContext, aStatusCode) {
@@ -72,7 +72,7 @@ var ShowFirstBodyPart = {
       var textObj = {};
       var converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
         .createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
-      var text = ShowFirstBodyPart.listener.text;
+      var text = this.text;
       if (ShowFirstBodyPart.hdr.Charset) {
         converter.charset = ShowFirstBodyPart.hdr.Charset;
       // hdr.Charset will not work with multipart messages, so we must try to extract the charset manually
@@ -172,7 +172,7 @@ var ShowFirstBodyPart = {
       var scriptStream = Components.classes['@mozilla.org/scriptableinputstream;1'].
             createInstance().QueryInterface(Components.interfaces.nsIScriptableInputStream);
       scriptStream.init(aInputStream);
-      ShowFirstBodyPart.listener.text+=scriptStream.read(scriptStream.available());
+      this.text += scriptStream.read(scriptStream.available());
     }
   },
 
@@ -226,8 +226,8 @@ var ShowFirstBodyPart = {
       catch(e) {
                  return;
       }
-      if (ShowFirstBodyPart.folderListener.key == hdr.messageKey && ShowFirstBodyPart.folderListener.URI == hdr.folder.URI) {
-        ShowFirstBodyPart.postActions(ShowFirstBodyPart.folderListener.key);
+      if (this.key == hdr.messageKey && this.URI == hdr.folder.URI) {
+        ShowFirstBodyPart.postActions(this.key);
         // we don't need anymore the folderListener
          Components.classes['@mozilla.org/messenger/services/session;1']
                       .getService(Components.interfaces.nsIMsgMailSession)
