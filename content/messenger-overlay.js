@@ -123,7 +123,7 @@ Content-Disposition: attachment;
     incrementDate : function(aMessage, aFolder) {
       let isImap = aFolder.server.type == 'imap';
       if (!isImap || !Prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix'))
-        return;
+        return aMessage;
 
       let date = this.getOrigDate(aMessage);
       // Some IMAP provider (for ex. GMAIL) doesn't register changes in sorce if the main headers
