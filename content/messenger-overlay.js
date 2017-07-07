@@ -82,7 +82,7 @@
     },
 
     onStopRequest : function (aRequest, aContext, aStatusCode) {
-      var isImap = (this.context.folder.server.type == 'imap') ? true : false;
+      var isImap = this.context.folder.server.type == 'imap';
       var date = ShowFirstBodyPart.getOrigDate(this.context.text);
 
       var converter = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
@@ -93,8 +93,8 @@
       }
       else {
         try {
-          var textCut = text.substring(text.indexOf('charset=')+8, text.indexOf('charset=')+35);
-          var mailCharset = textCut.match(/[^\s]+/).toString();
+          let textCut = text.substring(text.indexOf('charset=')+8, text.indexOf('charset=')+35);
+          let mailCharset = textCut.match(/[^\s]+/).toString();
           mailCharset = mailCharset.replace(/\"/g, '');
           mailCharset = mailCharset.replace(/\'/g, '');
           converter.charset = mailCharset;
@@ -121,40 +121,40 @@
       data = data.replace(/X-Mozilla-Keys.+\r\n/, '');
 
       if (Prefs.getBoolPref('extensions.hdrtoolslite.add_htl_header')) {
-        var now = new Date;
-        var HTLhead = 'X-HeaderToolsLite: '+action+' - '+now.toString();
-        HTLhead = HTLhead.replace(/\(.+\)/, '');
-        HTLhead = HTLhead.substring(0,75);
-        if (data.indexOf('\nX-HeaderToolsLite: ') <0)
-          data = data.replace('\r\n\r\n','\r\n'+HTLhead+'\r\n\r\n');
+        let now = new Date;
+        let line = 'X-ShowFirstBodyPart: applied - '+now.toString();
+        line = line.replace(/\(.+\)/, '');
+        line = line.substring(0, 75);
+        if (data.indexOf('\nX-ShowFirstBodyPart: ') < 0)
+          data = data.replace('\r\n\r\n','\r\n'+line+'\r\n\r\n');
         else
-          data = data.replace(/\nX-HeaderToolsLite: .+\r\n/,'\n'+HTLhead+'\r\n');
-       }
+          data = data.replace(/\nX-ShowFirstBodyPart: .+\r\n/,'\n'+line+'\r\n');
+      }
 
-       if (!dateIsChanged && isImap && Prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix')) {
-         // Some IMAP provider (for ex. GMAIL) doesn't register changes in sorce if the main headers
-         // are not different from an existing message. To work around this limit, the "Date" field is
-         // modified, if necessary, adding a second to the time (or decreasing a second if second are 59)
-         var newDate = date.replace(/(\d{2}):(\d{2}):(\d{2})/, function (str, p1, p2, p3) {
-           var z = parseInt(p3)+1;
-           if (z > 59) z = 58;
-           if (z < 10) z = '0'+z.toString();
-           return p1+':'+p2+':'+z
-         });
-         data = data.replace(date,newDate);
+      if (isImap && Prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix')) {
+        // Some IMAP provider (for ex. GMAIL) doesn't register changes in sorce if the main headers
+        // are not different from an existing message. To work around this limit, the "Date" field is
+        // modified, if necessary, adding a second to the time (or decreasing a second if second are 59)
+        let newDate = date.replace(/(\d{2}):(\d{2}):(\d{2})/, function (str, p1, p2, p3) {
+          var z = parseInt(p3) + 1;
+          if (z > 59) z = 58;
+          if (z < 10) z = '0'+z.toString();
+          return p1+':'+p2+':'+z
+        });
+        data = data.replace(date, newDate);
       }
 
       // creates the temporary file, where the modified message body will be stored
       var tempFile = Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get('TmpD', Ci.nsIFile);
       tempFile.append('HT.eml');
-      tempFile.createUnique(0,0600);
+      tempFile.createUnique(0, 0600);
       var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
       foStream.init(tempFile, 2, 0x200, false); // open as "write only"
-      foStream.write(data,data.length);
+      foStream.write(data, data.length);
       foStream.close();
 
-      var flags =  this.context.hdr.flags;
-      var keys =  this.context.hdr.getStringProperty('keywords');
+      var flags = this.context.hdr.flags;
+      var keys = this.context.hdr.getStringProperty('keywords');
 
       this.context.list = Cc['@mozilla.org/array;1'].createInstance(Ci.nsIMutableArray);
       this.context.list.appendElement(this.context.hdr, false);
@@ -167,10 +167,8 @@
       var fol = this.context.hdr.folder;
       var extService = Cc['@mozilla.org/uriloader/external-helper-app-service;1'].getService(Ci.nsPIExternalAppLauncher)
       extService.deleteTemporaryFileOnExit(fileSpec); // function's name says all!!!
-      this.context.noTrash = ! (Prefs.getBoolPref('extensions.hdrtoolslite.putOriginalInTrash'))
-      // Moved in copyListener.onStopCopy
-      // this.context.folder.deleteMessages(this.context.list,null,noTrash,true,null,false);
-      var cs = Cc['@mozilla.org/messenger/messagecopyservice;1'].getService(Ci.nsIMsgCopyService);
+      this.context.noTrash = !Prefs.getBoolPref('extensions.hdrtoolslite.putOriginalInTrash');
+      let cs = Cc['@mozilla.org/messenger/messagecopyservice;1'].getService(Ci.nsIMsgCopyService);
       cs.CopyFileMessage(fileSpec, fol, null, false, flags, keys, new ShowFirstBodyPartCopyListener(this.context), msgWindow);
     },
 
