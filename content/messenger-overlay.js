@@ -84,10 +84,7 @@
     onStopRequest : function (aRequest, aContext, aStatusCode) {
       var isImap = (this.context.folder.server.type == 'imap') ? true : false;
       var date = ShowFirstBodyPart.getOrigDate(this.context.text);
-      var originalSub = this.context.hdr.mime2DecodedSubject;
 
-      // we're editing full source
-      var textObj = {};
       var converter = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
       var text = this.context.text;
       if (this.context.hdr.Charset) {
@@ -116,8 +113,6 @@
         data = converter.ConvertFromUnicode(data);
       }
       catch(e) {}
-      var dateIsChanged = false;
-      var action = 'bodyChanged';
 
       // strips off some useless headers
       data = data.replace(/^From - .+\r\n/, '');
