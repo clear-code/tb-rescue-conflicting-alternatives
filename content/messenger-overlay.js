@@ -216,6 +216,7 @@ Content-Disposition: attachment;
     },
 
     onStopRequest : function (aRequest, aContext, aStatusCode) {
+      // console.log('StreamMessageLoader.onStopRequest\n------\n' + this.context.message);
       this._resolver(this.context);
     },
 
