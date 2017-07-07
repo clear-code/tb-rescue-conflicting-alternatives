@@ -175,7 +175,7 @@
     onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
       var scriptStream = Cc['@mozilla.org/scriptableinputstream;1'].createInstance().QueryInterface(Ci.nsIScriptableInputStream);
       scriptStream.init(aInputStream);
-      this.text += scriptStream.read(scriptStream.available());
+      this.context.text += scriptStream.read(scriptStream.available());
     }
   };
 
