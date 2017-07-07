@@ -20,6 +20,7 @@
                        em:description="Allows to show the first body part as the body, if there are multiple text/plain body parts."
                        em:creator="ClearCode Inc."
                        em:homepageURL="http://www.clear-code.com/">
+        <em:contributor>Paolo "Kaosmos": original author of "Header Tools Lite", codes to read/write messages</em:contributor>
       </RDF:Description>
     </em:localized>
 
@@ -29,6 +30,7 @@
                        em:description="複数のtext/plainな本文があるマルチパートのメールで、最初のパートを本文として表示できるようにします。"
                        em:creator="ClearCode Inc."
                        em:homepageURL="http://www.clear-code.com/">
+        <em:contributor>Paolo "Kaosmos": original author of "Header Tools Lite", codes to read/write messages</em:contributor>
       </RDF:Description>
     </em:localized>
 
