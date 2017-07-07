@@ -338,4 +338,5 @@ Content-Disposition: attachment;
     OnItemEvent: function(folder, event) {}
   };
 
+  aGlobal.ShowFirstBodyPart = ShowFirstBodyPart;
 })(this);
