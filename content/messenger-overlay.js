@@ -4,7 +4,7 @@ to maintain it for everyone. Moreover it doesn't affect any Thunderbird native f
 so it shouldn't give any compatibility problems.
 */
 
-var HeaderToolsLiteObj = {
+var ShowFirstBodyPart = {
 	
 	// global variables
 	folder : null,	
@@ -49,7 +49,7 @@ var HeaderToolsLiteObj = {
 
 		/*
 		if (! dateValue.match(/^.{3}\,/)) {
-			alert(HeaderToolsLiteObj.bundle.GetStringFromName("wrongDate"));
+			alert(ShowFirstBodyPart.bundle.GetStringFromName("wrongDate"));
 			return false;
 		}*/
 		window.arguments[0].date = dateValue;
@@ -65,12 +65,12 @@ var HeaderToolsLiteObj = {
 	// called loading dialog for editing full source, that is in window.arguments[0].value
 	initDialog2 : function() {
 		document.getElementById("editFSarea").focus();
-		var limit = HeaderToolsLiteObj.prefs.getIntPref("extensions.hdrtoolslite.fullsource_maxchars");
-		HeaderToolsLiteObj.full = window.arguments[0].value.length;
-		if (limit > -1 &&  HeaderToolsLiteObj.full > limit) {
+		var limit = ShowFirstBodyPart.prefs.getIntPref("extensions.hdrtoolslite.fullsource_maxchars");
+		ShowFirstBodyPart.full = window.arguments[0].value.length;
+		if (limit > -1 &&  ShowFirstBodyPart.full > limit) {
 			var text =  window.arguments[0].value.substring(0,limit);
 			document.getElementById("FS_button").removeAttribute("collapsed");
-			var percent = parseInt((limit/HeaderToolsLiteObj.full)*100);
+			var percent = parseInt((limit/ShowFirstBodyPart.full)*100);
 		}
 		else {
 			var text =  window.arguments[0].value;
@@ -89,7 +89,7 @@ var HeaderToolsLiteObj = {
 	},
 
 	showFullSource : function() {
-		if (confirm(HeaderToolsLiteObj.bundle.GetStringFromName("fsBigMessage"))) {
+		if (confirm(ShowFirstBodyPart.bundle.GetStringFromName("fsBigMessage"))) {
 			document.getElementById("editFSarea").setAttribute("limit", "-1");
 			document.getElementById("editFSarea").value = "";
 			document.getElementById("editFSarea").value = window.arguments[0].value;
@@ -119,7 +119,7 @@ var HeaderToolsLiteObj = {
 		var dateOrig = "";
 		var splitted = null;
 		try {
-			var str_message = HeaderToolsLiteObj.listener.text;
+			var str_message = ShowFirstBodyPart.listener.text;
 			// This is the end of the headers
 			var end = str_message.search(/\r?\n\r?\n/);
 			if (str_message.indexOf("\nDate") > -1 && str_message.indexOf("\nDate")  < end) 
@@ -141,28 +141,28 @@ var HeaderToolsLiteObj = {
 		var msguri = gFolderDisplay.selectedMessageUris[0];
 		var mms = messenger.messageServiceFromURI(msguri)
 			.QueryInterface(Components.interfaces.nsIMsgMessageService);
-		HeaderToolsLiteObj.hdr = mms.messageURIToMsgHdr(msguri);
-		HeaderToolsLiteObj.folder = HeaderToolsLiteObj.hdr.folder;
-		HeaderToolsLiteObj.listener.fullSource = false;
-		mms.streamMessage(msguri, HeaderToolsLiteObj.listener, null, null, false, null);	
+		ShowFirstBodyPart.hdr = mms.messageURIToMsgHdr(msguri);
+		ShowFirstBodyPart.folder = ShowFirstBodyPart.hdr.folder;
+		ShowFirstBodyPart.listener.fullSource = false;
+		mms.streamMessage(msguri, ShowFirstBodyPart.listener, null, null, false, null);	
 	},
 
 	// start editing full source
 	editFS: function() {
-		if (HeaderToolsLiteObj.prefs.getBoolPref("extensions.hdrtoolslite.editFullSourceWarning")) {
+		if (ShowFirstBodyPart.prefs.getBoolPref("extensions.hdrtoolslite.editFullSourceWarning")) {
 			var promptService = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
                               .getService(Components.interfaces.nsIPromptService);
 			var check = {value: false}; 
-			promptService.alertCheck(null,"HeaderToolsLite", HeaderToolsLiteObj.bundle.GetStringFromName("fsWarning"),HeaderToolsLiteObj.bundle.GetStringFromName("dontShowAgain"), check);
-			HeaderToolsLiteObj.prefs.setBoolPref("extensions.hdrtoolslite.editFullSourceWarning", ! check.value);
+			promptService.alertCheck(null,"HeaderToolsLite", ShowFirstBodyPart.bundle.GetStringFromName("fsWarning"),ShowFirstBodyPart.bundle.GetStringFromName("dontShowAgain"), check);
+			ShowFirstBodyPart.prefs.setBoolPref("extensions.hdrtoolslite.editFullSourceWarning", ! check.value);
 		}
 		var msguri = gFolderDisplay.selectedMessageUris[0];
 		var mms = messenger.messageServiceFromURI(msguri)
 			.QueryInterface(Components.interfaces.nsIMsgMessageService);
-		HeaderToolsLiteObj.hdr = mms.messageURIToMsgHdr(msguri);
-		HeaderToolsLiteObj.folder = HeaderToolsLiteObj.hdr.folder;
-		HeaderToolsLiteObj.listener.fullSource = true;
-		mms.streamMessage(msguri, HeaderToolsLiteObj.listener, null, null, false, null);			
+		ShowFirstBodyPart.hdr = mms.messageURIToMsgHdr(msguri);
+		ShowFirstBodyPart.folder = ShowFirstBodyPart.hdr.folder;
+		ShowFirstBodyPart.listener.fullSource = true;
+		mms.streamMessage(msguri, ShowFirstBodyPart.listener, null, null, false, null);			
 	},
 
 	cleanCRLF : function(data) {
@@ -188,23 +188,23 @@ var HeaderToolsLiteObj = {
         	},
         
 	        onStartRequest : function (aRequest, aContext) {
-			HeaderToolsLiteObj.listener.text = "";			
+			ShowFirstBodyPart.listener.text = "";			
 		},
             
         	onStopRequest : function (aRequest, aContext, aStatusCode) {
 			
-			var isImap = (HeaderToolsLiteObj.folder.server.type == "imap") ? true : false;
-			var date = HeaderToolsLiteObj.getOrigDate();
-			var originalSub = HeaderToolsLiteObj.hdr.mime2DecodedSubject;
+			var isImap = (ShowFirstBodyPart.folder.server.type == "imap") ? true : false;
+			var date = ShowFirstBodyPart.getOrigDate();
+			var originalSub = ShowFirstBodyPart.hdr.mime2DecodedSubject;
 				
-			if (HeaderToolsLiteObj.listener.fullSource) {
+			if (ShowFirstBodyPart.listener.fullSource) {
 				// we're editing full source
 				var textObj = {};
 				var converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
 					.createInstance(Components.interfaces.nsIScriptableUnicodeConverter); 
-				var text = HeaderToolsLiteObj.listener.text;
-				if (HeaderToolsLiteObj.hdr.Charset)
-					converter.charset = HeaderToolsLiteObj.hdr.Charset;
+				var text = ShowFirstBodyPart.listener.text;
+				if (ShowFirstBodyPart.hdr.Charset)
+					converter.charset = ShowFirstBodyPart.hdr.Charset;
 				// hdr.Charset will not work with multipart messages, so we must try to extract the charset manually
 				else {
 					try {
@@ -227,11 +227,11 @@ var HeaderToolsLiteObj = {
 				textObj.charset = converter.charset;
 				window.openDialog('chrome://hdrtoolslite/content/cnghdrs2.xul',"","chrome,modal,centerscreen,resizable",textObj);
 				if (textObj.cancel) { // user clicked on "Cancel" button
-					HeaderToolsLiteObj.hdr = null;
-					HeaderToolsLiteObj.folder = null;
+					ShowFirstBodyPart.hdr = null;
+					ShowFirstBodyPart.folder = null;
 					return;
 				}
-				var data = HeaderToolsLiteObj.cleanCRLF(textObj.value);
+				var data = ShowFirstBodyPart.cleanCRLF(textObj.value);
 				try {
 					converter.charset = textObj.charset;
 					data = converter.ConvertFromUnicode(data);
@@ -243,22 +243,22 @@ var HeaderToolsLiteObj = {
 			else {
 				// we're just changing headers details
 				var newHdr = {};
-				newHdr.author = HeaderToolsLiteObj.hdr.mime2DecodedAuthor;
-				newHdr.recipients = HeaderToolsLiteObj.hdr.mime2DecodedRecipients;
-				if (HeaderToolsLiteObj.hdr.flags & 0x0010) 
+				newHdr.author = ShowFirstBodyPart.hdr.mime2DecodedAuthor;
+				newHdr.recipients = ShowFirstBodyPart.hdr.mime2DecodedRecipients;
+				if (ShowFirstBodyPart.hdr.flags & 0x0010) 
 					// in replies the subject returned by mime2DecodedSubject has no initial "Re:"
 					originalSub ="Re: "+ originalSub;
 				newHdr.subject = originalSub;
 				newHdr.date = date;
-				newHdr.replyto = HeaderToolsLiteObj.hdr.getStringProperty("replyTo");
-				if (HeaderToolsLiteObj.hdr.messageId)
-					newHdr.mid = "<"+HeaderToolsLiteObj.hdr.messageId+">";
+				newHdr.replyto = ShowFirstBodyPart.hdr.getStringProperty("replyTo");
+				if (ShowFirstBodyPart.hdr.messageId)
+					newHdr.mid = "<"+ShowFirstBodyPart.hdr.messageId+">";
 				newHdr.ref = "";
-				var refs = HeaderToolsLiteObj.hdr.numReferences;
+				var refs = ShowFirstBodyPart.hdr.numReferences;
 				if (refs > 0)
-					newHdr.ref = "<"+HeaderToolsLiteObj.hdr.getStringReference(0)+">";
+					newHdr.ref = "<"+ShowFirstBodyPart.hdr.getStringReference(0)+">";
 				for (var i=1;i<refs;i++)
-					newHdr.ref = newHdr.ref + " <" + HeaderToolsLiteObj.hdr.getStringReference(i)+">";
+					newHdr.ref = newHdr.ref + " <" + ShowFirstBodyPart.hdr.getStringReference(i)+">";
 
 				window.openDialog('chrome://hdrtoolslite/content/cnghdrs.xul',"","chrome,modal,centerscreen,resizable ",newHdr);
 
@@ -276,7 +276,7 @@ var HeaderToolsLiteObj = {
 				else
 					var newReplytoEnc = null;
 			
-				var data = HeaderToolsLiteObj.cleanCRLF(HeaderToolsLiteObj.listener.text);
+				var data = ShowFirstBodyPart.cleanCRLF(ShowFirstBodyPart.listener.text);
 				var endHeaders = data.search(/\r\n\r\n/);
 				var headers = data.substring(0,endHeaders);
 
@@ -347,7 +347,7 @@ var HeaderToolsLiteObj = {
 			data = data.replace(/X-Mozilla-Status2.+\r\n/, "");
 			data = data.replace(/X-Mozilla-Keys.+\r\n/, "");
 				
-			if (HeaderToolsLiteObj.prefs.getBoolPref("extensions.hdrtoolslite.add_htl_header")) {
+			if (ShowFirstBodyPart.prefs.getBoolPref("extensions.hdrtoolslite.add_htl_header")) {
 				var now = new Date;
 				var HTLhead = "X-HeaderToolsLite: "+action+" - "+now.toString();
 				HTLhead = HTLhead.replace(/\(.+\)/, "");
@@ -358,7 +358,7 @@ var HeaderToolsLiteObj = {
 					data = data.replace(/\nX-HeaderToolsLite: .+\r\n/,"\n"+HTLhead+"\r\n");
 			}
 						
-			if (! dateIsChanged && isImap && HeaderToolsLiteObj.prefs.getBoolPref("extensions.hdrtoolslite.use_imap_fix")) {
+			if (! dateIsChanged && isImap && ShowFirstBodyPart.prefs.getBoolPref("extensions.hdrtoolslite.use_imap_fix")) {
 				// Some IMAP provider (for ex. GMAIL) doesn't register changes in sorce if the main headers
 				// are not different from an existing message. To work around this limit, the "Date" field is 
 				// modified, if necessary, adding a second to the time (or decreasing a second if second are 59)
@@ -382,11 +382,11 @@ var HeaderToolsLiteObj = {
 			foStream.write(data,data.length);
 			foStream.close();
 					
-			var flags =  HeaderToolsLiteObj.hdr.flags;
-			var keys =  HeaderToolsLiteObj.hdr.getStringProperty("keywords");
+			var flags =  ShowFirstBodyPart.hdr.flags;
+			var keys =  ShowFirstBodyPart.hdr.getStringProperty("keywords");
 
-			HeaderToolsLiteObj.list = Components.classes["@mozilla.org/array;1"].createInstance(Components.interfaces.nsIMutableArray);
-			HeaderToolsLiteObj.list.appendElement(HeaderToolsLiteObj.hdr, false);
+			ShowFirstBodyPart.list = Components.classes["@mozilla.org/array;1"].createInstance(Components.interfaces.nsIMutableArray);
+			ShowFirstBodyPart.list.appendElement(ShowFirstBodyPart.hdr, false);
 	
 			// this is interesting: nsIMsgFolder.copyFileMessage seems to have a bug on Windows, when
 			// the nsIFile has been already used by foStream (because of Windows lock system?), so we	
@@ -394,23 +394,23 @@ var HeaderToolsLiteObj = {
 			var fileSpec = Components.classes["@mozilla.org/file/local;1"]
 				.createInstance(Components.interfaces.nsILocalFile);
 			fileSpec.initWithPath(tempFile.path);
-			var fol = HeaderToolsLiteObj.hdr.folder;
+			var fol = ShowFirstBodyPart.hdr.folder;
 			var extService = Components.classes['@mozilla.org/uriloader/external-helper-app-service;1']
 				.getService(Components.interfaces.nsPIExternalAppLauncher)
 			extService.deleteTemporaryFileOnExit(fileSpec); // function's name says all!!!
-			HeaderToolsLiteObj.noTrash = ! (HeaderToolsLiteObj.prefs.getBoolPref("extensions.hdrtoolslite.putOriginalInTrash"))
+			ShowFirstBodyPart.noTrash = ! (ShowFirstBodyPart.prefs.getBoolPref("extensions.hdrtoolslite.putOriginalInTrash"))
 			// Moved in copyListener.onStopCopy
-			// HeaderToolsLiteObj.folder.deleteMessages(HeaderToolsLiteObj.list,null,noTrash,true,null,false);
+			// ShowFirstBodyPart.folder.deleteMessages(ShowFirstBodyPart.list,null,noTrash,true,null,false);
 			var cs = Components.classes["@mozilla.org/messenger/messagecopyservice;1"]
                      		 .getService(Components.interfaces.nsIMsgCopyService);
-			cs.CopyFileMessage(fileSpec, fol, null, false, flags, keys, HeaderToolsLiteObj.copyListener, msgWindow);		
+			cs.CopyFileMessage(fileSpec, fol, null, false, flags, keys, ShowFirstBodyPart.copyListener, msgWindow);		
 		},
 	
          	onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
 				var scriptStream = Components.classes["@mozilla.org/scriptableinputstream;1"].
             	createInstance().QueryInterface(Components.interfaces.nsIScriptableInputStream);
 				scriptStream.init(aInputStream);
-				HeaderToolsLiteObj.listener.text+=scriptStream.read(scriptStream.available());
+				ShowFirstBodyPart.listener.text+=scriptStream.read(scriptStream.available());
 	     }        
 	},
 
@@ -429,30 +429,30 @@ var HeaderToolsLiteObj = {
 		OnStartCopy: function () {},
 		OnStopCopy: function (status) {
 			if (status == 0) // copy done
-				HeaderToolsLiteObj.folder.deleteMessages(HeaderToolsLiteObj.list,null,HeaderToolsLiteObj.noTrash,true,null,false);			
+				ShowFirstBodyPart.folder.deleteMessages(ShowFirstBodyPart.list,null,ShowFirstBodyPart.noTrash,true,null,false);			
 		},
 		SetMessageKey: function (key) {
 			// at this point, the message is already stored in local folders, but not yet in remote folders,
 			// so for remote folders we use a folderListener
-			if (HeaderToolsLiteObj.folder.server.type == "imap" || HeaderToolsLiteObj.folder.server.type == "news") {
+			if (ShowFirstBodyPart.folder.server.type == "imap" || ShowFirstBodyPart.folder.server.type == "news") {
 				Components.classes["@mozilla.org/messenger/services/session;1"]
 			            .getService(Components.interfaces.nsIMsgMailSession)
-			            .AddFolderListener(HeaderToolsLiteObj.folderListener, Components.interfaces.nsIFolderListener.all);
-				HeaderToolsLiteObj.folderListener.key = key;
-				HeaderToolsLiteObj.folderListener.URI = HeaderToolsLiteObj.folder.URI;
+			            .AddFolderListener(ShowFirstBodyPart.folderListener, Components.interfaces.nsIFolderListener.all);
+				ShowFirstBodyPart.folderListener.key = key;
+				ShowFirstBodyPart.folderListener.URI = ShowFirstBodyPart.folder.URI;
 			}
 			else
-				setTimeout(function() {HeaderToolsLiteObj.postActions(key);}, 500);
+				setTimeout(function() {ShowFirstBodyPart.postActions(key);}, 500);
 		} 
 	},
 
 	postActions : function(key) {
 		gDBView.selectMsgByKey(key); // select message with modified headers/source
-		var hdr = HeaderToolsLiteObj.folder.GetMessageHeader(key);
+		var hdr = ShowFirstBodyPart.folder.GetMessageHeader(key);
 		if (hdr.flags & 2) 
-			HeaderToolsLiteObj.folder.addMessageDispositionState(hdr,0); //set replied if necessary
+			ShowFirstBodyPart.folder.addMessageDispositionState(hdr,0); //set replied if necessary
 	        if (hdr.flags & 4096) 
-			HeaderToolsLiteObj.folder.addMessageDispositionState(hdr,1); //set fowarded if necessary
+			ShowFirstBodyPart.folder.addMessageDispositionState(hdr,1); //set fowarded if necessary
 	},
 
 	// used just for remote folders
@@ -464,12 +464,12 @@ var HeaderToolsLiteObj = {
 			catch(e) {
 		             return;
 			}
-			if (HeaderToolsLiteObj.folderListener.key == hdr.messageKey && HeaderToolsLiteObj.folderListener.URI == hdr.folder.URI) {
-				HeaderToolsLiteObj.postActions(HeaderToolsLiteObj.folderListener.key);
+			if (ShowFirstBodyPart.folderListener.key == hdr.messageKey && ShowFirstBodyPart.folderListener.URI == hdr.folder.URI) {
+				ShowFirstBodyPart.postActions(ShowFirstBodyPart.folderListener.key);
 				// we don't need anymore the folderListener
 				 Components.classes["@mozilla.org/messenger/services/session;1"]
 		                	.getService(Components.interfaces.nsIMsgMailSession)
-		                	.RemoveFolderListener(HeaderToolsLiteObj.folderListener);
+		                	.RemoveFolderListener(ShowFirstBodyPart.folderListener);
 			}            
 		},
 		OnItemRemoved: function(parentItem, item, view) {},
@@ -484,8 +484,8 @@ var HeaderToolsLiteObj = {
 	init : function() {
 		var shortcut1, shortcut2 = null;
 		try {
-			shortcut1 = HeaderToolsLiteObj.prefs.getCharPref("extensions.hdrtoolslite.edit_shortcut");
-			shortcut2 = HeaderToolsLiteObj.prefs.getCharPref("extensions.hdrtoolslite.editFS_shortcut");
+			shortcut1 = ShowFirstBodyPart.prefs.getCharPref("extensions.hdrtoolslite.edit_shortcut");
+			shortcut2 = ShowFirstBodyPart.prefs.getCharPref("extensions.hdrtoolslite.editFS_shortcut");
 		}
 		catch(e) {}
 		if (shortcut1) {
