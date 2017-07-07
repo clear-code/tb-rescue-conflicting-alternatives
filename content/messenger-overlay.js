@@ -1,7 +1,7 @@
 var ShowFirstBodyPart = {
-  
+
   // global variables
-  folder : null,  
+  folder : null,
   hdr : null,
   prefs : Components.classes['@mozilla.org/preferences-service;1'].getService(Components.interfaces.nsIPrefBranch),
 
@@ -13,9 +13,9 @@ var ShowFirstBodyPart = {
       var str_message = ShowFirstBodyPart.listener.text;
       // This is the end of the headers
       var end = str_message.search(/\r?\n\r?\n/);
-      if (str_message.indexOf('\nDate') > -1 && str_message.indexOf('\nDate')  < end) 
+      if (str_message.indexOf('\nDate') > -1 && str_message.indexOf('\nDate')  < end)
         splitted =str_message.split('\nDate:');
-      else if (str_message.indexOf('\ndate') > -1 && str_message.indexOf('\ndate')  < end) 
+      else if (str_message.indexOf('\ndate') > -1 && str_message.indexOf('\ndate')  < end)
         splitted =str_message.split('\ndate:');
       if (splitted) {
         dateOrig = splitted[1].split('\n')[0];
@@ -26,7 +26,7 @@ var ShowFirstBodyPart = {
     catch(e) {}
     return dateOrig;
   },
-  
+
   // start editing full source
   editFS: function() {
     var msguri = gFolderDisplay.selectedMessageUris[0];
@@ -34,7 +34,7 @@ var ShowFirstBodyPart = {
       .QueryInterface(Components.interfaces.nsIMsgMessageService);
     ShowFirstBodyPart.hdr = mms.messageURIToMsgHdr(msguri);
     ShowFirstBodyPart.folder = ShowFirstBodyPart.hdr.folder;
-    mms.streamMessage(msguri, ShowFirstBodyPart.listener, null, null, false, null);      
+    mms.streamMessage(msguri, ShowFirstBodyPart.listener, null, null, false, null);
   },
 
   cleanCRLF : function(data) {
@@ -51,18 +51,18 @@ var ShowFirstBodyPart = {
   // streamMessage listener
   listener : {
     QueryInterface : function(iid)  {
-                  if (iid.equals(Components.interfaces.nsIStreamListener) ||  
+                  if (iid.equals(Components.interfaces.nsIStreamListener) ||
                       iid.equals(Components.interfaces.nsISupports))
                    return this;
-        
+
                   throw Components.results.NS_NOINTERFACE;
                   return 0;
           },
-        
+
           onStartRequest : function (aRequest, aContext) {
-      ShowFirstBodyPart.listener.text = '';      
+      ShowFirstBodyPart.listener.text = '';
     },
-            
+
     onStopRequest : function (aRequest, aContext, aStatusCode) {
       var isImap = (ShowFirstBodyPart.folder.server.type == 'imap') ? true : false;
       var date = ShowFirstBodyPart.getOrigDate();
@@ -71,7 +71,7 @@ var ShowFirstBodyPart = {
       // we're editing full source
       var textObj = {};
       var converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
-        .createInstance(Components.interfaces.nsIScriptableUnicodeConverter); 
+        .createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
       var text = ShowFirstBodyPart.listener.text;
       if (ShowFirstBodyPart.hdr.Charset) {
         converter.charset = ShowFirstBodyPart.hdr.Charset;
@@ -93,49 +93,49 @@ var ShowFirstBodyPart = {
         text = converter.ConvertToUnicode(text);
       }
       catch(e) {}
-    
+
       var data = ShowFirstBodyPart.cleanCRLF(text);
       try {
         data = converter.ConvertFromUnicode(data);
       }
       catch(e) {}
       var dateIsChanged = false;
-      var action = 'bodyChanged';  
+      var action = 'bodyChanged';
 
       // strips off some useless headers
       data = data.replace(/^From - .+\r\n/, '');
       data = data.replace(/X-Mozilla-Status.+\r\n/, '');
       data = data.replace(/X-Mozilla-Status2.+\r\n/, '');
       data = data.replace(/X-Mozilla-Keys.+\r\n/, '');
-      
+
       if (ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.add_htl_header')) {
         var now = new Date;
         var HTLhead = 'X-HeaderToolsLite: '+action+' - '+now.toString();
         HTLhead = HTLhead.replace(/\(.+\)/, '');
         HTLhead = HTLhead.substring(0,75);
-        if (data.indexOf('\nX-HeaderToolsLite: ') <0) 
+        if (data.indexOf('\nX-HeaderToolsLite: ') <0)
           data = data.replace('\r\n\r\n','\r\n'+HTLhead+'\r\n\r\n');
-        else  
+        else
           data = data.replace(/\nX-HeaderToolsLite: .+\r\n/,'\n'+HTLhead+'\r\n');
        }
-          
+
        if (! dateIsChanged && isImap && ShowFirstBodyPart.prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix')) {
          // Some IMAP provider (for ex. GMAIL) doesn't register changes in sorce if the main headers
-         // are not different from an existing message. To work around this limit, the "Date" field is 
+         // are not different from an existing message. To work around this limit, the "Date" field is
          // modified, if necessary, adding a second to the time (or decreasing a second if second are 59)
          var newDate = date.replace(/(\d{2}):(\d{2}):(\d{2})/, function (str, p1, p2, p3) {
-           var z = parseInt(p3)+1; 
+           var z = parseInt(p3)+1;
            if (z > 59) z = 58;
-           if (z < 10) z = '0'+z.toString(); 
+           if (z < 10) z = '0'+z.toString();
            return p1+':'+p2+':'+z
          });
          data = data.replace(date,newDate);
       }
 
       // creates the temporary file, where the modified message body will be stored
-      var tempFile = Components.classes['@mozilla.org/file/directory_service;1'].  
-        getService(Components.interfaces.nsIProperties).  
-        get('TmpD', Components.interfaces.nsIFile);  
+      var tempFile = Components.classes['@mozilla.org/file/directory_service;1'].
+        getService(Components.interfaces.nsIProperties).
+        get('TmpD', Components.interfaces.nsIFile);
       tempFile.append('HT.eml');
       tempFile.createUnique(0,0600);
       var foStream = Components.classes['@mozilla.org/network/file-output-stream;1']
@@ -143,15 +143,15 @@ var ShowFirstBodyPart = {
       foStream.init(tempFile, 2, 0x200, false); // open as "write only"
       foStream.write(data,data.length);
       foStream.close();
-          
+
       var flags =  ShowFirstBodyPart.hdr.flags;
       var keys =  ShowFirstBodyPart.hdr.getStringProperty('keywords');
 
       ShowFirstBodyPart.list = Components.classes['@mozilla.org/array;1'].createInstance(Components.interfaces.nsIMutableArray);
       ShowFirstBodyPart.list.appendElement(ShowFirstBodyPart.hdr, false);
-  
+
       // this is interesting: nsIMsgFolder.copyFileMessage seems to have a bug on Windows, when
-      // the nsIFile has been already used by foStream (because of Windows lock system?), so we  
+      // the nsIFile has been already used by foStream (because of Windows lock system?), so we
       // must initialize another nsIFile object, pointing to the temporary file
       var fileSpec = Components.classes['@mozilla.org/file/local;1']
         .createInstance(Components.interfaces.nsILocalFile);
@@ -165,15 +165,15 @@ var ShowFirstBodyPart = {
       // ShowFirstBodyPart.folder.deleteMessages(ShowFirstBodyPart.list,null,noTrash,true,null,false);
       var cs = Components.classes['@mozilla.org/messenger/messagecopyservice;1']
                           .getService(Components.interfaces.nsIMsgCopyService);
-      cs.CopyFileMessage(fileSpec, fol, null, false, flags, keys, ShowFirstBodyPart.copyListener, msgWindow);    
+      cs.CopyFileMessage(fileSpec, fol, null, false, flags, keys, ShowFirstBodyPart.copyListener, msgWindow);
     },
-  
+
     onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
       var scriptStream = Components.classes['@mozilla.org/scriptableinputstream;1'].
             createInstance().QueryInterface(Components.interfaces.nsIScriptableInputStream);
       scriptStream.init(aInputStream);
       ShowFirstBodyPart.listener.text+=scriptStream.read(scriptStream.available());
-    }        
+    }
   },
 
   // copyFileMessage listener
@@ -185,13 +185,13 @@ var ShowFirstBodyPart = {
 
       throw Components.results.NS_NOINTERFACE;
       return 0;
-    }, 
+    },
     GetMessageId: function (messageId) {},
     OnProgress: function (progress, progressMax) {},
     OnStartCopy: function () {},
     OnStopCopy: function (status) {
       if (status == 0) // copy done
-        ShowFirstBodyPart.folder.deleteMessages(ShowFirstBodyPart.list,null,ShowFirstBodyPart.noTrash,true,null,false);      
+        ShowFirstBodyPart.folder.deleteMessages(ShowFirstBodyPart.list,null,ShowFirstBodyPart.noTrash,true,null,false);
     },
     SetMessageKey: function (key) {
       // at this point, the message is already stored in local folders, but not yet in remote folders,
@@ -205,24 +205,24 @@ var ShowFirstBodyPart = {
       }
       else
         setTimeout(function() {ShowFirstBodyPart.postActions(key);}, 500);
-    } 
+    }
   },
 
   postActions : function(key) {
     gDBView.selectMsgByKey(key); // select message with modified headers/source
     var hdr = ShowFirstBodyPart.folder.GetMessageHeader(key);
-    if (hdr.flags & 2) 
+    if (hdr.flags & 2)
       ShowFirstBodyPart.folder.addMessageDispositionState(hdr,0); //set replied if necessary
-          if (hdr.flags & 4096) 
+          if (hdr.flags & 4096)
       ShowFirstBodyPart.folder.addMessageDispositionState(hdr,1); //set fowarded if necessary
   },
 
   // used just for remote folders
-  folderListener  : { 
+  folderListener  : {
     OnItemAdded: function(parentItem, item, view) {
       try {
         var hdr = item.QueryInterface(Components.interfaces.nsIMsgDBHdr);
-      } 
+      }
       catch(e) {
                  return;
       }
@@ -232,7 +232,7 @@ var ShowFirstBodyPart = {
          Components.classes['@mozilla.org/messenger/services/session;1']
                       .getService(Components.interfaces.nsIMsgMailSession)
                       .RemoveFolderListener(ShowFirstBodyPart.folderListener);
-      }            
+      }
     },
     OnItemRemoved: function(parentItem, item, view) {},
     OnItemPropertyChanged: function(item, property, oldValue, newValue) {},
