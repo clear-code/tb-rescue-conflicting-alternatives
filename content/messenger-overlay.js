@@ -11,20 +11,26 @@
       var msguri = gFolderDisplay.selectedMessageUris[0];
       var context = {};
       var loader = new StreamMessageLoader(context);
-      loader.load(msguri)
+      return loader.load(msguri)
         .then((aContext) => {
           var message = aContext.message;
           message = this.prepareMessage(message, aContext.hdr.Charset);
           message = this.cleanupMozHeaders(message);
+
+          var updatedMessage = this.fixMultiplePlaintextBodies(message);
+          if (updatedMessage == message)
+            return;
+
+          message = updatedMessage;
           message = this.markAsApplied(message);
           message = this.incrementDate(message, aContext.folder);
 
           var file = this.saveToTempFile(message);
           var replacer = new MessageReplacer(aContext);
-          return replacer.replaceFromFile(file);
-        })
-        .then((aContext) => {
-          this.restoreState(aContext);
+          return replacer.replaceFromFile(file)
+            .then((aContext) => {
+              this.restoreState(aContext);
+            });
         });
     },
 
@@ -76,6 +82,27 @@
       aMessage = aMessage.replace(/X-Mozilla-Status.+\r\n/, '');
       aMessage = aMessage.replace(/X-Mozilla-Status2.+\r\n/, '');
       aMessage = aMessage.replace(/X-Mozilla-Keys.+\r\n/, '');
+      return aMessage;
+    },
+
+    fixMultiplePlaintextBodies : function(aMessage) {
+      let initialBodyFound = false;
+      aMessage = aMessage.replace(/Content-Type: text\/plain/g, function(matched) {
+        if (initialBodyFound) {
+/* Instead, we should just add Content-Disposition hader and the name part like:
+----
+Content-Type: text\/plain;
+ name="=?UTF-8?B?xxxxxxx?="
+Content-Disposition: attachment;
+ filename*0*=utf-8''xxxxx;
+ filename*1*=xxxxx
+----
+*/
+          return 'Content-Type: application/octet-stream';
+        }
+        initialBodyFound = true;
+        return matched;
+      });
       return aMessage;
     },
 
