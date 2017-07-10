@@ -64,18 +64,18 @@
           }
           catch(e) {
           }
-      return this.ensureCurrentMessageLoaded(aContext)
-        .then((aContext) => {
-          var bodies = this.collectSameTypeBodies(aContext.message);
-          this.log('found bodies: ', bodies);
-          if (Object.keys(bodies).every((aType) => {
-                return bodies[aType].length < 2;
-              }))
-            return false; // only one body for each type
+          return this.ensureCurrentMessageLoaded(aContext)
+            .then((aContext) => {
+              var bodies = this.collectSameTypeBodies(aContext.message);
+              this.log('found bodies: ', bodies);
+              if (Object.keys(bodies).every((aType) => {
+                    return bodies[aType].length < 2;
+                  }))
+                return false; // only one body for each type
 
-          aContext.bodies = bodies;
-          return true;
-        });
+              aContext.bodies = bodies;
+              return true;
+            });
         });
     },
 
