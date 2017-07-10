@@ -44,7 +44,7 @@
           console.log('found bodies: ', bodies);
           if (Object.keys(bodies).every((aType) => {
                 return bodies[aType].length < 2;
-              })
+              }))
             return false; // only one body for each type
 
           aContext.bodies = bodies;
