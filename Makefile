@@ -1,4 +1,4 @@
-PACKAGE_NAME = show-first-body-part
+PACKAGE_NAME = rescue-conflicting-alternatives
 
 .PHONY: all xpi signed clean
 

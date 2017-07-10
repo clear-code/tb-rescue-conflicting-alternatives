@@ -1,3 +1,3 @@
 setlocal
-bash makexpi\makexpi.sh -n show-first-body-part -o
+bash makexpi\makexpi.sh -n rescue-conflicting-alternatives -o
 endlocal

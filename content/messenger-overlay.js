@@ -8,7 +8,7 @@
   const Prefs = Cc['@mozilla.org/preferences;1'].getService(Ci.nsIPrefBranch);
   const { Promise } = Cu.import('resource://gre/modules/Promise.jsm', {});
 
-  var ShowFirstBodyPart = {
+  var RescueConflictingAlt = {
     onMessageShown : function() {
       var context = {};
       return this.shouldApply(context)
@@ -195,13 +195,13 @@
         return aMessage;
 
       let now = new Date();
-      let line = 'X-ShowFirstBodyPart: applied - '+now.toString();
+      let line = 'X-RescueConflictingAlt: applied - '+now.toString();
       line = line.replace(/\(.+\)/, '');
       line = line.substring(0, 75);
-      if (aMessage.indexOf('\nX-ShowFirstBodyPart: ') < 0)
+      if (aMessage.indexOf('\nX-RescueConflictingAlt: ') < 0)
         return aMessage.replace('\r\n\r\n','\r\n'+line+'\r\n\r\n');
       else
-        return aMessage.replace(/\nX-ShowFirstBodyPart: .+\r\n/,'\n'+line+'\r\n');
+        return aMessage.replace(/\nX-RescueConflictingAlt: .+\r\n/,'\n'+line+'\r\n');
     },
 
     incrementDate : function(aMessage, aFolder) {
@@ -423,5 +423,5 @@
     OnItemEvent: function(folder, event) {}
   };
 
-  aGlobal.ShowFirstBodyPart = ShowFirstBodyPart;
+  aGlobal.RescueConflictingAlt = RescueConflictingAlt;
 })(this);

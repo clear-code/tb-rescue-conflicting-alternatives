@@ -1,2 +1,4 @@
-# tb-show-first-body-part
-Allows to show the first body part as the body, if there are multiple text/plain body parts.
+# tb-rescue-conflicting-alternatives
+
+Converts a mail with conflicting alternative bodes to regular multipart mail.
+

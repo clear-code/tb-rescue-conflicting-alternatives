@@ -1,4 +1,4 @@
 #!/bin/sh
 
-makexpi/makexpi.sh -n show-first-body-part -o
+makexpi/makexpi.sh -n rescue-conflicting-alternatives -o
 
