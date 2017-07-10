@@ -32,12 +32,12 @@
     },
 
     ensureCurrentMessagePrepared : function(aContext) {
-      if (aContext && aContext.message)
+      if (aContext && aContext.headers)
         return Promise.resolve(aContext);
 
       aContext = aContext || {};
       let loader = new StreamMessageLoader(this.selectedMessageURI, aContext);
-      return loader.prepare();
+      return loader.loadHeaders();
     },
 
     ensureCurrentMessageLoaded : function(aContext) {
@@ -46,26 +46,37 @@
 
       aContext = aContext || {};
       let loader = new StreamMessageLoader(this.selectedMessageURI, aContext);
-      return loader.load()
+      return loader.loadAll()
         .then((aContext) => {
           aContext.message = this.prepareMessage(aContext.message, aContext.hdr.Charset);
           return aContext;
         });
     },
 
-    APPLIED_KEY : 'rescue-conflicting-alternatives-applied',
+    SCANNED_KEY : 'rescue-conflicting-alternatives-scanned',
 
     shouldApply : function(aContext) {
       return this.ensureCurrentMessagePrepared(aContext)
         .then((aContext) => {
           try {
-            if (aContext.hdr.getStringProperty(this.APPLIED_KEY) == 'true')
+            this.log(this.SCANNED_KEY+' = '+aContext.hdr.getStringProperty(this.SCANNED_KEY));
+            if (aContext.hdr.getStringProperty(this.SCANNED_KEY) == 'true') {
+              this.log('already scanned');
               return false;
+            }
           }
           catch(e) {
           }
+
+          this.log(aContext.headers);
+          if (!this.MULTIPART_ALTERNATIVE_MATCHER.test(aContext.headers)) {
+            this.log('not alternative');
+            return false;
+          }
+
           return this.ensureCurrentMessageLoaded(aContext)
             .then((aContext) => {
+              aContext.hdr.setStringProperty(this.SCANNED_KEY, 'true')
               var bodies = this.collectSameTypeBodies(aContext.message);
               this.log('found bodies: ', bodies);
               if (Object.keys(bodies).every((aType) => {
@@ -143,7 +154,6 @@
           var replacer = new MessageReplacer(aContext);
           return replacer.replaceFromFile(file)
             .then((aContext) => {
-              aContext.hdr.setStringProperty(this.APPLIED_KEY, 'true')
               this.restoreState(aContext);
             });
         });
@@ -323,11 +333,21 @@
       return Promise.resolve(this.context);
     },
 
-    load : function() {
+    loadHeaders : function() {
       return this.prepare().then((aContext) => {
         return new Promise((aResolve, aReject) => {
-          this._resolver = aResolve;
-          this._rejector = aReject;
+          this._resolverHeaders = aResolve;
+          this._rejectorHeaders = aReject;
+          this.messengerService.streamHeaders(this.URI, this, null, null, false, null);
+        });
+      });
+    },
+
+    loadAll : function() {
+      return this.prepare().then((aContext) => {
+        return new Promise((aResolve, aReject) => {
+          this._resolverAll = aResolve;
+          this._rejectorAll = aReject;
           this.messengerService.streamMessage(this.URI, this, null, null, false, null);
         });
       });
@@ -343,18 +363,34 @@
     },
 
     onStartRequest : function (aRequest, aContext) {
-      this.context.message = '';
+      if (this._resolverHeaders)
+        this.context.headers = '';
+      if (this._resolverAll)
+        this.context.message = '';
     },
 
     onStopRequest : function (aRequest, aContext, aStatusCode) {
       //console.log('StreamMessageLoader.onStopRequest\n------\n' + this.context.message);
-      this._resolver(this.context);
+      if (this._resolverHeaders) {
+        this._resolverHeaders(this.context);
+        delete this._resolverHeaders;
+        delete this._rejectorHeaders;
+      }
+      if (this._resolverAll) {
+        this._resolverAll(this.context);
+        delete this._resolverAll;
+        delete this._rejectorAll;
+      }
     },
 
     onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
       var scriptStream = Cc['@mozilla.org/scriptableinputstream;1'].createInstance().QueryInterface(Ci.nsIScriptableInputStream);
       scriptStream.init(aInputStream);
-      this.context.message += scriptStream.read(scriptStream.available());
+      var data = scriptStream.read(scriptStream.available());
+      if (this._resolverHeaders)
+        this.context.headers += data;
+      if (this._resolverAll)
+        this.context.message += data;
     }
   };
 
