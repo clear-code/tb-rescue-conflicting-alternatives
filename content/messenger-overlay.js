@@ -94,7 +94,7 @@
           var message = aContext.message;
           message = this.cleanupMozHeaders(message);
 
-          var updatedMessage = this.fixMultiplePlaintextBodies(message);
+          var updatedMessage = this.fixMultiplePlaintextBodies(message, aContext.bodies);
           if (updatedMessage == message)
             return;
 
@@ -162,23 +162,15 @@
       return aMessage;
     },
 
-    fixMultiplePlaintextBodies : function(aMessage) {
-      let initialBodyFound = false;
-      aMessage = aMessage.replace(/Content-Type: text\/plain/g, function(matched) {
-        if (initialBodyFound) {
-/* Instead, we should just add Content-Disposition hader and the name part like:
-----
-Content-Type: text\/plain;
- name="=?UTF-8?B?xxxxxxx?="
-Content-Disposition: attachment;
- filename*0*=utf-8''xxxxx;
- filename*1*=xxxxx
-----
-*/
-          return 'Content-Type: application/octet-stream';
-        }
-        initialBodyFound = true;
-        return matched;
+    fixMultiplePlaintextBodies : function(aMessage, aBodies) {
+      var bodies = aBodies || this.getPlaintextBodies(aMessage);
+      bodies.slice(1).forEach((aBody, aIndex) => {
+        console.log('fixup body, before: ', aBody);
+        var name = 'extra-body.' + (aIndex + 1) + '.txt';
+        var updatedBody = aBody.replace(/^(Content-Type:\s*)(text\/plain)/im, '$1application/octet-stream; name=' + name);
+        updatedBody = 'Content-Disposition: attachment; filename=' + name + '\r\n' + updatedBody;
+        console.log('fixup body, after: ', updatedBody);
+        aMessage = aMessage.replace(aBody, updatedBody);
       });
       return aMessage;
     },
