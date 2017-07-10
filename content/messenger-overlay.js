@@ -31,20 +31,39 @@
       return gFolderDisplay.selectedMessageUris[0];
     },
 
+    ensureCurrentMessagePrepared : function(aContext) {
+      if (aContext && aContext.message)
+        return Promise.resolve(aContext);
+
+      aContext = aContext || {};
+      let loader = new StreamMessageLoader(this.selectedMessageURI, aContext);
+      return loader.prepare();
+    },
+
     ensureCurrentMessageLoaded : function(aContext) {
       if (aContext && aContext.message)
         return Promise.resolve(aContext);
 
       aContext = aContext || {};
-      let loader = new StreamMessageLoader(aContext);
-      return loader.load(this.selectedMessageURI)
+      let loader = new StreamMessageLoader(this.selectedMessageURI, aContext);
+      return loader.load()
         .then((aContext) => {
           aContext.message = this.prepareMessage(aContext.message, aContext.hdr.Charset);
           return aContext;
         });
     },
 
+    APPLIED_KEY : 'rescue-conflicting-alternatives-applied',
+
     shouldApply : function(aContext) {
+      return this.ensureCurrentMessagePrepared(aContext)
+        .then((aContext) => {
+          try {
+            if (aContext.hdr.getStringProperty(this.APPLIED_KEY) == 'true')
+              return false;
+          }
+          catch(e) {
+          }
       return this.ensureCurrentMessageLoaded(aContext)
         .then((aContext) => {
           var bodies = this.collectSameTypeBodies(aContext.message);
@@ -56,6 +75,7 @@
 
           aContext.bodies = bodies;
           return true;
+        });
         });
     },
 
@@ -123,6 +143,7 @@
           var replacer = new MessageReplacer(aContext);
           return replacer.replaceFromFile(file)
             .then((aContext) => {
+              aContext.hdr.setStringProperty(this.APPLIED_KEY, 'true')
               this.restoreState(aContext);
             });
         });
@@ -285,18 +306,30 @@
   };
 
   // appends "hdr", "folder", and "message" to the context
-  function StreamMessageLoader(aContext) {
+  function StreamMessageLoader(aURI, aContext) {
+    this.URI = aURI;
     this.context = aContext || {};
   }
   StreamMessageLoader.prototype = {
-    load : function(aURI) {
-      var mms = messenger.messageServiceFromURI(aURI).QueryInterface(Ci.nsIMsgMessageService);
-      this.context.hdr = mms.messageURIToMsgHdr(aURI);
+    get messengerService() {
+      if (this._messengerService)
+        return this._messengerService;
+      return this._messengerService = messenger.messageServiceFromURI(this.URI).QueryInterface(Ci.nsIMsgMessageService);
+    },
+
+    prepare : function() {
+      this.context.hdr = this.messengerService.messageURIToMsgHdr(this.URI);
       this.context.folder = this.context.hdr.folder;
-      return new Promise((aResolve, aReject) => {
-        this._resolver = aResolve;
-        this._rejector = aReject;
-        mms.streamMessage(aURI, this, null, null, false, null);
+      return Promise.resolve(this.context);
+    },
+
+    load : function() {
+      return this.prepare().then((aContext) => {
+        return new Promise((aResolve, aReject) => {
+          this._resolver = aResolve;
+          this._rejector = aReject;
+          this.messengerService.streamMessage(this.URI, this, null, null, false, null);
+        });
       });
     },
 
