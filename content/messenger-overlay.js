@@ -56,16 +56,18 @@
         });
     },
 
+    MULTIPART_ALTERNATIVE_MATCHER : /^(Content-Type:\s*)multipart\/alternative(;\s*boundary=)(['"]?)([^\1 ]+)/im,
+
     getPlaintextBodies : function(aMessage) {
       var bodies = [];
 
       var header = aMessage.split('\r\n\r\n')[0];
-      var boundaryMatch = header.match(/^Content-Type:\s*multipart\/alternative;\s*boundary=(['"]?)([^\1 ]+)\1/im);
+      var boundaryMatch = header.match(this.MULTIPART_ALTERNATIVE_MATCHER);
       //console.log('boundaryMatch: ', boundaryMatch);
       if (!boundaryMatch)
         return bodies;
 
-      var boundary = '--' + boundaryMatch[2];
+      var boundary = '--' + boundaryMatch[4];
       var lastPart = [];
       var checkPart = function(aPart) {
         //console.log('checkPart: ', aPart);
@@ -172,6 +174,8 @@
         console.log('fixup body, after: ', updatedBody);
         aMessage = aMessage.replace(aBody, updatedBody);
       });
+      // convert to regular multipart message
+      aMessage = aMessage.replace(this.MULTIPART_ALTERNATIVE_MATCHER, '$1multipart/mixed$2$3$4');      
       return aMessage;
     },
 
