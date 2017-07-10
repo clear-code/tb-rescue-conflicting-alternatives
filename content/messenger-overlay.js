@@ -170,14 +170,14 @@
       var allBodies = aBodies || this.collectSameTypeBodies(aMessage);
       Object.keys(allBodies).forEach((aType) => {
         var bodies = allBodies[aType];
-      bodies.slice(1).forEach((aBody, aIndex) => {
-        console.log('fixup body, before: ', aBody);
-        var name = 'extra-body.' + (aIndex + 1) + '.txt';
-        var updatedBody = aBody.replace(/^(Content-Type:\s*)([^\s]+)/im, '$1$2; name=' + name);
-        updatedBody = 'Content-Disposition: attachment; filename=' + name + '\r\n' + updatedBody;
-        console.log('fixup body, after: ', updatedBody);
-        aMessage = aMessage.replace(aBody, updatedBody);
-      });
+        bodies.slice(1).forEach((aBody, aIndex) => {
+          console.log('fixup body, before: ', aBody);
+          var name = 'extra-body.' + (aIndex + 1) + '.txt';
+          var updatedBody = aBody.replace(/^(Content-Type:\s*)([^\s]+)/im, '$1$2; name=' + name);
+          updatedBody = 'Content-Disposition: attachment; filename=' + name + '\r\n' + updatedBody;
+          console.log('fixup body, after: ', updatedBody);
+          aMessage = aMessage.replace(aBody, updatedBody);
+        });
       });
       // convert to regular multipart message
       aMessage = aMessage.replace(this.MULTIPART_ALTERNATIVE_MATCHER, '$1multipart/mixed$2$3$4');      
