@@ -40,12 +40,6 @@
     shouldApply : function(aContext) {
       return this.ensureCurrentMessageLoaded(aContext)
         .then((aContext) => {
-          var header = aContext.message.split('\r\n\r\n')[0];
-          var hasModifiedHeader = /^X-FEAS-ATTACHMENT-FILTER:\s+Contains HTML tags./im.test(header);
-          //console.log('hasModifiedHeader: ', hasModifiedHeader);
-          if (!hasModifiedHeader)
-            return false; // not modified
-
           var bodies = this.getPlaintextBodies(aContext.message);
           console.log('found bodies: ', bodies.length, bodies);
           if (bodies.length < 2)
