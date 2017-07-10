@@ -40,10 +40,12 @@
     shouldApply : function(aContext) {
       return this.ensureCurrentMessageLoaded(aContext)
         .then((aContext) => {
-          var bodies = this.getPlaintextBodies(aContext.message);
-          console.log('found bodies: ', bodies.length, bodies);
-          if (bodies.length < 2)
-            return false; // only one body
+          var bodies = this.collectSameTypeBodies(aContext.message);
+          console.log('found bodies: ', bodies);
+          if (Object.keys(bodies).every((aType) => {
+                return bodies[aType].length < 2;
+              })
+            return false; // only one body for each type
 
           aContext.bodies = bodies;
           return true;
@@ -52,24 +54,30 @@
 
     MULTIPART_ALTERNATIVE_MATCHER : /^(Content-Type:\s*)multipart\/alternative(;\s*boundary=)(['"]?)([^\1 ]+)/im,
 
-    getPlaintextBodies : function(aMessage) {
-      var bodies = [];
+    collectSameTypeBodies : function(aMessage) {
+      var bodiesWithTypes = {};
 
       var header = aMessage.split('\r\n\r\n')[0];
       var boundaryMatch = header.match(this.MULTIPART_ALTERNATIVE_MATCHER);
       //console.log('boundaryMatch: ', boundaryMatch);
       if (!boundaryMatch)
-        return bodies;
+        return bodiesWithTypes;
 
       var boundary = '--' + boundaryMatch[4];
       var lastPart = [];
       var checkPart = function(aPart) {
         //console.log('checkPart: ', aPart);
         var header = aPart.split('\r\n\r\n')[0];
-        if (/^Content-Type:\s*text\/plain\s*/im.test(header) &&
-            !/^Content-Type:[^\r]+(\r\n [^\r]+)*name=.+/im.test(header) &&
-            !/^Content-Disposition:\s*attachment[^\r]+(\r\n [^\r]+)*filename.+/im.test(header))
-          bodies.push(aPart);
+        if (/^Content-Type:[^\r]+(\r\n [^\r]+)*name=.+/im.test(header) ||
+            /^Content-Disposition:\s*attachment[^\r]+(\r\n [^\r]+)*filename.+/im.test(header))
+          return; // ignore regular attachments
+
+        var typeMatch = header.match(/^Content-Type:\s*([^\s]+)\s*/im);
+        if (typeMatch) {
+          let type = typeMatch[1];
+          bodiesWithTypes[type] = bodiesWithTypes[type] || [];
+          bodiesWithTypes[type].push(aPart);
+        }
       };
       aMessage.split('\r\n').forEach((aLine) => {
         if (aLine != boundary) {
@@ -80,7 +88,7 @@
         lastPart = [];
       });
       checkPart(lastPart.join('\r\n'));
-      return bodies;
+      return bodiesWithTypes;
     },
 
     tryUpdateCurrentMessage : function(aContext) {
@@ -159,14 +167,17 @@
     },
 
     fixMultiplePlaintextBodies : function(aMessage, aBodies) {
-      var bodies = aBodies || this.getPlaintextBodies(aMessage);
+      var allBodies = aBodies || this.collectSameTypeBodies(aMessage);
+      Object.keys(allBodies).forEach((aType) => {
+        var bodies = allBodies[aType];
       bodies.slice(1).forEach((aBody, aIndex) => {
         console.log('fixup body, before: ', aBody);
         var name = 'extra-body.' + (aIndex + 1) + '.txt';
-        var updatedBody = aBody.replace(/^(Content-Type:\s*)(text\/plain)/im, '$1application/octet-stream; name=' + name);
+        var updatedBody = aBody.replace(/^(Content-Type:\s*)([^\s]+)/im, '$1$2; name=' + name);
         updatedBody = 'Content-Disposition: attachment; filename=' + name + '\r\n' + updatedBody;
         console.log('fixup body, after: ', updatedBody);
         aMessage = aMessage.replace(aBody, updatedBody);
+      });
       });
       // convert to regular multipart message
       aMessage = aMessage.replace(this.MULTIPART_ALTERNATIVE_MATCHER, '$1multipart/mixed$2$3$4');      
