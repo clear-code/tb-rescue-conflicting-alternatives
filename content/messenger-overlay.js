@@ -52,7 +52,7 @@
         });
     },
 
-    MULTIPART_ALTERNATIVE_MATCHER : /^(Content-Type:\s*)multipart\/alternative(;\s*boundary=)(['"]?)([^\1 ]+)/im,
+    MULTIPART_ALTERNATIVE_MATCHER : /^(Content-Type:\s*)multipart\/alternative(;\s*boundary=(['"]?)([^\s]+)\3)/im,
 
     collectSameTypeBodies : function(aMessage) {
       var bodiesWithTypes = {};
@@ -79,12 +79,18 @@
           bodiesWithTypes[type].push(aPart);
         }
       };
+      var inPreAlternativeParts = true;
       aMessage.split('\r\n').forEach((aLine) => {
         if (aLine != boundary) {
           lastPart.push(aLine)
           return;
         }
-        checkPart(lastPart.join('\r\n'));
+        if (inPreAlternativeParts) {
+          inPreAlternativeParts = false;
+        }
+        else {
+          checkPart(lastPart.join('\r\n'));
+        }
         lastPart = [];
       });
       checkPart(lastPart.join('\r\n'));
@@ -180,7 +186,7 @@
         });
       });
       // convert to regular multipart message
-      aMessage = aMessage.replace(this.MULTIPART_ALTERNATIVE_MATCHER, '$1multipart/mixed$2$3$4');      
+      aMessage = aMessage.replace(this.MULTIPART_ALTERNATIVE_MATCHER, '$1multipart/mixed$2');
       return aMessage;
     },
 
