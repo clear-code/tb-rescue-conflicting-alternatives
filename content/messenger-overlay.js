@@ -9,13 +9,13 @@
   const { Promise } = Cu.import('resource://gre/modules/Promise.jsm', {});
 
   var RescueConflictingAlt = {
-    onMessageShown : function() {
+    tryUpdateCurrentMessage : function() {
       var context = {};
       return this.shouldApply(context)
         .then((aShouldApply) => {
           if (!aShouldApply)
             return;
-          return this.tryUpdateCurrentMessage(context);
+          return this.updateCurrentMessage(context);
         })
         .catch((aError) => console.log(aError));
     },
@@ -97,7 +97,7 @@
       return bodiesWithTypes;
     },
 
-    tryUpdateCurrentMessage : function(aContext) {
+    updateCurrentMessage : function(aContext) {
       console.log('tryUpdateCurrentMessage: ', aContext);
       return this.ensureCurrentMessageLoaded(aContext)
         .then((aContext) => {
@@ -267,7 +267,14 @@
       if (hdr.flags & 4096) {
         aContext.folder.addMessageDispositionState(hdr, 1); //set fowarded if necessary
       }
-    }
+    },
+
+    // message listener
+    onStartHeaders: function() {},
+    onEndHeaders: function() {
+      this.tryUpdateCurrentMessage();
+    },
+    onEndAttachments: function () {}
   };
 
   // appends "hdr", "folder", and "message" to the context
@@ -424,4 +431,9 @@
   };
 
   aGlobal.RescueConflictingAlt = RescueConflictingAlt;
+
+  window.addEventListener('DOMContentLoaded', function onDOMContentLoaded(aEvent) {
+    gMessageListeners.push(RescueConflictingAlt);
+    window.removeEventListener(aEvent.type, onDOMContentLoaded, false);
+  }, false);
 })(this);
