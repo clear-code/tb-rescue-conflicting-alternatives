@@ -9,6 +9,13 @@
   const { Promise } = Cu.import('resource://gre/modules/Promise.jsm', {});
 
   var RescueConflictingAlt = {
+    log : function(...aArgs) {
+      if (!Prefs.getBoolPref('extensions.rescue-conflicting-alternatives@clear-code.com.debug'))
+        return;
+      aArgs.unshift('rescue-conflicting-alternatives: ');
+      console.log(...aArgs);
+    },
+
     tryUpdateCurrentMessage : function() {
       var context = {};
       return this.shouldApply(context)
@@ -17,7 +24,7 @@
             return;
           return this.updateCurrentMessage(context);
         })
-        .catch((aError) => console.log(aError));
+        .catch((aError) => this.log(aError));
     },
 
     get selectedMessageURI() {
@@ -41,7 +48,7 @@
       return this.ensureCurrentMessageLoaded(aContext)
         .then((aContext) => {
           var bodies = this.collectSameTypeBodies(aContext.message);
-          console.log('found bodies: ', bodies);
+          this.log('found bodies: ', bodies);
           if (Object.keys(bodies).every((aType) => {
                 return bodies[aType].length < 2;
               }))
@@ -59,14 +66,14 @@
 
       var header = aMessage.split('\r\n\r\n')[0];
       var boundaryMatch = header.match(this.MULTIPART_ALTERNATIVE_MATCHER);
-      //console.log('boundaryMatch: ', boundaryMatch);
+      this.log('boundaryMatch: ', boundaryMatch);
       if (!boundaryMatch)
         return bodiesWithTypes;
 
       var boundary = '--' + boundaryMatch[4];
       var lastPart = [];
-      var checkPart = function(aPart) {
-        //console.log('checkPart: ', aPart);
+      var checkPart = (function(aPart) {
+        this.log('checkPart: ', aPart);
         var header = aPart.split('\r\n\r\n')[0];
         if (/^Content-Type:[^\r]+(\r\n [^\r]+)*name=.+/im.test(header) ||
             /^Content-Disposition:\s*attachment[^\r]+(\r\n [^\r]+)*filename.+/im.test(header))
@@ -78,7 +85,7 @@
           bodiesWithTypes[type] = bodiesWithTypes[type] || [];
           bodiesWithTypes[type].push(aPart);
         }
-      };
+      }).bind(this);
       var inPreAlternativeParts = true;
       aMessage.split('\r\n').forEach((aLine) => {
         if (aLine != boundary) {
@@ -98,7 +105,7 @@
     },
 
     updateCurrentMessage : function(aContext) {
-      console.log('tryUpdateCurrentMessage: ', aContext);
+      this.log('tryUpdateCurrentMessage: ', aContext);
       return this.ensureCurrentMessageLoaded(aContext)
         .then((aContext) => {
           var message = aContext.message;
@@ -177,11 +184,11 @@
       Object.keys(allBodies).forEach((aType) => {
         var bodies = allBodies[aType];
         bodies.slice(1).forEach((aBody, aIndex) => {
-          console.log('fixup body, before: ', aBody);
+          this.log('fixup body, before: ', aBody);
           var name = 'extra-body.' + (aIndex + 1) + '.txt';
           var updatedBody = aBody.replace(/^(Content-Type:\s*)([^\s]+)/im, '$1$2; name=' + name);
           updatedBody = 'Content-Disposition: attachment; filename=' + name + '\r\n' + updatedBody;
-          console.log('fixup body, after: ', updatedBody);
+          this.log('fixup body, after: ', updatedBody);
           aMessage = aMessage.replace(aBody, updatedBody);
         });
       });
@@ -191,7 +198,7 @@
     },
 
     markAsApplied : function(aMessage) {
-      if (!Prefs.getBoolPref('extensions.hdrtoolslite.add_htl_header'))
+      if (!Prefs.getBoolPref('extensions.rescue-conflicting-alternatives@clear-code.com.add_htl_header'))
         return aMessage;
 
       let now = new Date();
@@ -206,7 +213,7 @@
 
     incrementDate : function(aMessage, aFolder) {
       let isImap = aFolder.server.type == 'imap';
-      if (!isImap || !Prefs.getBoolPref('extensions.hdrtoolslite.use_imap_fix'))
+      if (!isImap || !Prefs.getBoolPref('extensions.rescue-conflicting-alternatives@clear-code.com.use_imap_fix'))
         return aMessage;
 
       let date = this.getOrigDate(aMessage);
@@ -307,7 +314,7 @@
     },
 
     onStopRequest : function (aRequest, aContext, aStatusCode) {
-      // console.log('StreamMessageLoader.onStopRequest\n------\n' + this.context.message);
+      //console.log('StreamMessageLoader.onStopRequest\n------\n' + this.context.message);
       this._resolver(this.context);
     },
 
@@ -366,7 +373,7 @@
       if (status == 0) { // copy done
         let hdrs = Cc['@mozilla.org/array;1'].createInstance(Ci.nsIMutableArray);
         hdrs.appendElement(this.context.hdr, false);
-        let noTrash = !Prefs.getBoolPref('extensions.hdrtoolslite.putOriginalInTrash');
+        let noTrash = !Prefs.getBoolPref('extensions.rescue-conflicting-alternatives@clear-code.com.putOriginalInTrash');
         this.context.folder.deleteMessages(hdrs, null, noTrash, true, null, false);
 
         this._replaced = true;
