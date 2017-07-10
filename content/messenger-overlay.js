@@ -190,7 +190,7 @@ Content-Disposition: attachment;
 
   // appends "hdr", "folder", and "message" to the context
   function StreamMessageLoader(aContext) {
-    this.context = aContext;
+    this.context = aContext || {};
   }
   StreamMessageLoader.prototype = {
     load : function(aURI) {
@@ -230,7 +230,7 @@ Content-Disposition: attachment;
   };
 
   function MessageReplacer(aContext) {
-    this.context = aContext;
+    this.context = aContext || {};
   }
   MessageReplacer.prototype = {
     replaceFromFile : function(aFile) {
@@ -306,7 +306,7 @@ Content-Disposition: attachment;
 
   // used just for remote folders
   function RemoteFolderWatcher(aContext) {
-    this.context = aContext;
+    this.context = aContext || {};
   }
   RemoteFolderWatcher.prototype = {
     waitUntilAdded : function() {
