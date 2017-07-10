@@ -9,14 +9,89 @@
   const { Promise } = Cu.import('resource://gre/modules/Promise.jsm', {});
 
   var ShowFirstBodyPart = {
-    tryUpdateCurrentMessage : function() {
-      var msguri = gFolderDisplay.selectedMessageUris[0];
+    onMessageShown : function() {
       var context = {};
-      var loader = new StreamMessageLoader(context);
-      return loader.load(msguri)
+      return this.shouldApply(context)
+        .then((aShouldApply) => {
+          if (!aShouldApply)
+            return;
+          return this.tryUpdateCurrentMessage(context);
+        })
+        .catch((aError) => console.log(aError));
+    },
+
+    get selectedMessageURI() {
+      return gFolderDisplay.selectedMessageUris[0];
+    },
+
+    ensureCurrentMessageLoaded : function(aContext) {
+      if (aContext && aContext.message)
+        return Promise.resolve(aContext);
+
+      aContext = aContext || {};
+      let loader = new StreamMessageLoader(aContext);
+      return loader.load(this.selectedMessageURI)
+        .then((aContext) => {
+          aContext.message = this.prepareMessage(aContext.message, aContext.hdr.Charset);
+          return aContext;
+        });
+    },
+
+    shouldApply : function(aContext) {
+      return this.ensureCurrentMessageLoaded(aContext)
+        .then((aContext) => {
+          var header = aContext.message.split('\r\n\r\n')[0];
+          var hasModifiedHeader = /^X-FEAS-ATTACHMENT-FILTER:\s+Contains HTML tags./im.test(header);
+          //console.log('hasModifiedHeader: ', hasModifiedHeader);
+          if (!hasModifiedHeader)
+            return false; // not modified
+
+          var bodies = this.getPlaintextBodies(aContext.message);
+          console.log('found bodies: ', bodies.length, bodies);
+          if (bodies.length < 2)
+            return false; // only one body
+
+          aContext.bodies = bodies;
+          return true;
+        });
+    },
+
+    getPlaintextBodies : function(aMessage) {
+      var bodies = [];
+
+      var header = aMessage.split('\r\n\r\n')[0];
+      var boundaryMatch = header.match(/^Content-Type:\s*multipart\/alternative;\s*boundary=(['"]?)([^\1 ]+)\1/im);
+      //console.log('boundaryMatch: ', boundaryMatch);
+      if (!boundaryMatch)
+        return bodies;
+
+      var boundary = '--' + boundaryMatch[2];
+      var lastPart = [];
+      var checkPart = function(aPart) {
+        //console.log('checkPart: ', aPart);
+        var header = aPart.split('\r\n\r\n')[0];
+        if (/^Content-Type:\s*text\/plain\s*/im.test(header) &&
+            !/^Content-Type:[^\r]+(\r\n [^\r]+)*name=.+/im.test(header) &&
+            !/^Content-Disposition:\s*attachment[^\r]+(\r\n [^\r]+)*filename.+/im.test(header))
+          bodies.push(aPart);
+      };
+      aMessage.split('\r\n').forEach((aLine) => {
+        if (aLine != boundary) {
+          lastPart.push(aLine)
+          return;
+        }
+        checkPart(lastPart.join('\r\n'));
+        lastPart = [];
+      });
+      checkPart(lastPart.join('\r\n'));
+      return bodies;
+    },
+
+    tryUpdateCurrentMessage : function(aContext) {
+      console.log('tryUpdateCurrentMessage: ', aContext);
+      return this.ensureCurrentMessageLoaded(aContext)
         .then((aContext) => {
           var message = aContext.message;
-          message = this.prepareMessage(message, aContext.hdr.Charset);
           message = this.cleanupMozHeaders(message);
 
           var updatedMessage = this.fixMultiplePlaintextBodies(message);
