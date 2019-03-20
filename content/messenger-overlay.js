@@ -17,9 +17,11 @@
     },
 
     tryUpdateCurrentMessage : function() {
+      this.log('tryUpdateCurrentMessage');
       var context = {};
       return this.shouldApply(context)
         .then((aShouldApply) => {
+          this.log('aShouldApply: ', aShouldApply);
           if (!aShouldApply)
             return;
           return this.updateCurrentMessage(context);
@@ -136,7 +138,7 @@
     },
 
     updateCurrentMessage : function(aContext) {
-      this.log('tryUpdateCurrentMessage: ', aContext);
+      this.log('updateCurrentMessage: ', aContext);
       return this.ensureCurrentMessageLoaded(aContext)
         .then((aContext) => {
           var message = aContext.message;
@@ -310,6 +312,7 @@
     // message listener
     onStartHeaders: function() {},
     onEndHeaders: function() {
+      this.log('onEndHeaders');
       this.tryUpdateCurrentMessage();
     },
     onEndAttachments: function () {}
@@ -370,7 +373,7 @@
     },
 
     onStopRequest : function (aRequest, aContext, aStatusCode) {
-      //console.log('StreamMessageLoader.onStopRequest\n------\n' + this.context.message);
+      RescueConflictingAlt.log('StreamMessageLoader.onStopRequest\n------\n' + this.context.message);
       if (this._resolverHeaders) {
         this._resolverHeaders(this.context);
         delete this._resolverHeaders;
@@ -511,5 +514,6 @@
   window.addEventListener('DOMContentLoaded', function onDOMContentLoaded(aEvent) {
     gMessageListeners.push(RescueConflictingAlt);
     window.removeEventListener(aEvent.type, onDOMContentLoaded, false);
+    RescueConflictingAlt.log('initialized');
   }, false);
 })(this);
