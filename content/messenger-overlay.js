@@ -5,7 +5,7 @@
   const Ci = Components.interfaces;
   const Cu = Components.utils;
   const Cr = Components.results;
-  const Prefs = Cc['@mozilla.org/preferences;1'].getService(Ci.nsIPrefBranch);
+  const Prefs = Cc['@mozilla.org/preferences-service;1'].getService(Ci.nsIPrefBranch);
   const { Promise } = Cu.import('resource://gre/modules/Promise.jsm', {});
 
   var RescueConflictingAlt = {
@@ -408,7 +408,7 @@
       // this is interesting: nsIMsgFolder.copyFileMessage seems to have a bug on Windows, when
       // the nsIFile has been already used by foStream (because of Windows lock system?), so we
       // must initialize another nsIFile object, pointing to the temporary file
-      let fileSpec = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+      let fileSpec = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
       fileSpec.initWithPath(aFile.path);
 
       let extService = Cc['@mozilla.org/uriloader/external-helper-app-service;1'].getService(Ci.nsPIExternalAppLauncher)
