@@ -5,7 +5,7 @@
   <RDF:Description RDF:about="urn:mozilla:install-manifest"
                    em:id="rescue-conflicting-alternatives@clear-code.com"
                    em:name="Rescue Conflicting Alternatives"
-                   em:version="0.1"
+                   em:version="0.2"
                    em:type="2"
                    em:description="Converts a mail with conflicting alternative bodes to regular multipart mail."
                    em:creator="ClearCode Inc."
