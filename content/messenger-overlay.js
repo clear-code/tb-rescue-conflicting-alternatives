@@ -310,12 +310,16 @@
     },
 
     // message listener
-    onStartHeaders: function() {},
+    onStartHeaders: function() {
+      this.log('onStartHeaders');
+    },
     onEndHeaders: function() {
       this.log('onEndHeaders');
       this.tryUpdateCurrentMessage();
     },
-    onEndAttachments: function () {}
+    onEndAttachments: function () {
+      this.log('onEndAttachments');
+    }
   };
 
   // appends "hdr", "folder", and "message" to the context
@@ -386,7 +390,7 @@
       }
     },
 
-    onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
+    onDataAvailable : function (aRequest, aInputStream, aOffset, aCount) {
       var scriptStream = Cc['@mozilla.org/scriptableinputstream;1'].createInstance().QueryInterface(Ci.nsIScriptableInputStream);
       scriptStream.init(aInputStream);
       var data = scriptStream.read(scriptStream.available());
