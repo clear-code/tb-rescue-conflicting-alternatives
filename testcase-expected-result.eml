@@ -6,10 +6,11 @@ Date: Fri, 24 Jan 2020 09:25:41 +0900
 User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:68.0) Gecko/20100101
  Thunderbird/68.4.1
 MIME-Version: 1.0
-Content-Type: multipart/alternative;
+Content-Type: multipart/mixed;
  boundary="------------72304D96F1D375927F32C311"
 Content-Language: ja
 Content-Transfer-Encoding: 8bit
+X-RescueConflictingAlt: applied - Fri Jan 24 2020 11:49:34 GMT+0900 
 
 multipart/alternativeの本文
 --------------72304D96F1D375927F32C311
@@ -18,12 +19,14 @@ Content-Transfer-Encoding: 8bit
 
 text/plainの本文1
 --------------72304D96F1D375927F32C311
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Disposition: attachment; filename=extra-body.1.txt
+Content-Type: text/plain;; name=extra-body.1.txt charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 text/plainの本文2
 --------------72304D96F1D375927F32C311
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Disposition: attachment; filename=extra-body.2.txt
+Content-Type: text/plain;; name=extra-body.2.txt charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 text/plainの本文3
