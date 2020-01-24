@@ -14,24 +14,22 @@ Content-Type: multipart/alternative;
 Content-Language: ja
 Content-Transfer-Encoding: 8bit
 
-multipart/alternativeの本文1
-Content-Type: multipart/alternative;
- boundary="------------72304D96F1D375927F32C311"
-Content-Language: ja
-Content-Transfer-Encoding: 8bit
-
-multipart/alternativeの本文2
-Content-Type: multipart/alternative;
- boundary="------------72304D96F1D375927F32C311"
-Content-Language: ja
-Content-Transfer-Encoding: 8bit
-
-multipart/alternativeの本文3
+multipart/alternativeの本文
 --------------72304D96F1D375927F32C311
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-text/plainの本文
+text/plainの本文1
+--------------72304D96F1D375927F32C311
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+
+text/plainの本文2
+--------------72304D96F1D375927F32C311
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+
+text/plainの本文3
 --------------72304D96F1D375927F32C311
 Content-Type: text/html; charset=utf-8
 Content-Transfer-Encoding: 8bit
