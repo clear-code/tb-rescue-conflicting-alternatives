@@ -9,7 +9,6 @@
   "name": "Rescue Conflicting Alternatives",
   "description": "Converts a mail with conflicting alternative bodies to regular multipart mail.",
   "version": "0.4",
-
   "legacy": {
     "type": "xul"
   }
