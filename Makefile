@@ -1,18 +1,17 @@
-PACKAGE_NAME = rescue-conflicting-alternatives
+PACKAGE = rescue-conflicting-alternatives@clear-code.com.xpi
 
-.PHONY: all xpi signed clean
+INCLUDES = chrome.manifest \
+           manifest.json \
+           content/messenger-overlay.js \
+           content/messenger-overlay.xul \
+           defaults/preferences/rescue-conflicting-alternatives.js
 
-all: xpi
+all: $(PACKAGE)
 
-xpi: makexpi/makexpi.sh
-	git submodule update
-	makexpi/makexpi.sh -n $(PACKAGE_NAME) -o
-
-makexpi/makexpi.sh:
-	git submodule update --init
-
-signed: xpi
-	makexpi/sign_xpi.sh -k $(JWT_KEY) -s $(JWT_SECRET) -p ./$(PACKAGE_NAME)_noupdate.xpi
+$(PACKAGE):
+	zip -r -9 $@ $(INCLUDES)
 
 clean:
-	rm $(PACKAGE_NAME).xpi $(PACKAGE_NAME)_noupdate.xpi sha1hash.txt
+	rm -f $(PACKAGE)
+
+.PHONY: all clean
