@@ -7,3 +7,6 @@
 [submodule "submodules/webextensions-lib-options"]
 	path = submodules/webextensions-lib-options
 	url = https://github.com/piroor/webextensions-lib-options.git
+[submodule "submodules/webextensions-lib-message-body"]
+	path = submodules/webextensions-lib-message-body
+	url = https://gitlab.com/clear-code/webextensions-lib-message-body.git

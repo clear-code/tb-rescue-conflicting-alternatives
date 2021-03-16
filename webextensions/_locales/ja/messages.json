@@ -2,6 +2,11 @@
   "extensionName": { "message": "Rescue Conflicting Alternatives" },
   "extensionDescription": { "message": "競合する代替の本文を持つメールを通常の添付ファイルに変換します。" },
 
+  "extraBodies_header": { "message": "このメッセージには、他に以下の $COUNT$ 個の本文パートが含まれています：",
+    "placeholders": {
+      "count": { "content": "$1", "example": "3" }
+    }},
+
   "config_title": { "message": "Rescue Conflicting Alternativesの設定" },
 
   "config_debug_caption": { "message": "開発者向け" },

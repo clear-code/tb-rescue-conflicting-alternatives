@@ -2,6 +2,11 @@
   "extensionName": { "message": "Rescue Conflicting Alternatives" },
   "extensionDescription": { "message": "Converts a mail with conflicting alternative bodies to regular multipart mail." },
 
+  "extraBodies_header": { "message": "This message contains $COUNT$ more body part(s):",
+    "placeholders": {
+      "count": { "content": "$1", "example": "3" }
+    }},
+
   "config_title": { "message": "Rescue Conflicting Alternatives Configuration" },
 
   "config_debug_caption": { "message": "Development" },
