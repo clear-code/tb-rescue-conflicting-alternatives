@@ -32,6 +32,8 @@ install_extlib:
 	cp ../submodules/webextensions-lib-configs/Configs.js extlib/; echo 'export default Configs;' >> extlib/Configs.js
 	cp ../submodules/webextensions-lib-options/Options.js extlib/; echo 'export default Options;' >> extlib/Options.js
 	cp ../submodules/webextensions-lib-l10n/l10n.js extlib/; echo 'export default l10n;' >> extlib/l10n.js
+	#cp ../submodules/webextensions-lib-dialog/dialog.js extlib/
+	cp ../submodules/webextensions-lib-dialog/dialog.css extlib/
 	cp ../submodules/webextensions-lib-message-body/messageBody.js extlib/
 
 test:

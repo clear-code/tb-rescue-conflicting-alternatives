@@ -10,3 +10,6 @@
 [submodule "submodules/webextensions-lib-message-body"]
 	path = submodules/webextensions-lib-message-body
 	url = https://gitlab.com/clear-code/webextensions-lib-message-body.git
+[submodule "submodules/webextensions-lib-dialog"]
+	path = submodules/webextensions-lib-dialog
+	url = https://gitlab.com/clear-code/webextensions-lib-dialog.git
