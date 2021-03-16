@@ -5,8 +5,6 @@
 */
 'use strict';
 
-console.log('LOADED');
-
 function sanitizeForHTMLText(text) {
   return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

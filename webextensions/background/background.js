@@ -6,16 +6,11 @@
 'use strict';
 
 import {
-  configs,
   log,
 } from '/common/common.js';
-import * as Constants from '/common/constants.js';
 import * as MessageBody from '/extlib/messageBody.js';
 
 MessageBody.setLogger(log);
-
-configs.$loaded.then(() => {
-});
 
 /*
 // for solo message windows

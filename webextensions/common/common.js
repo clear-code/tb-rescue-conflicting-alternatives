@@ -6,7 +6,6 @@
 'use strict';
 
 import Configs from '/extlib/Configs.js';
-import * as Constants from './constants.js';
 
 const OVERRIDE_DEFAULT_CONFIGS = {}; /* Replace this for more customization on an enterprise use. */
 
