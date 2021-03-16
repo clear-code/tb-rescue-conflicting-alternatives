@@ -12,7 +12,7 @@ const OVERRIDE_DEFAULT_CONFIGS = {}; /* Replace this for more customization on a
 export const configs = new Configs({
 
   configsVersion: 0,
-  debug: true,
+  debug: false,
 
   ...OVERRIDE_DEFAULT_CONFIGS
 }, {
