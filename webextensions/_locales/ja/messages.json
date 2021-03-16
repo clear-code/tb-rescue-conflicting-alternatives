@@ -1,0 +1,11 @@
+{
+  "extensionName": { "message": "Rescue Conflicting Alternatives" },
+  "extensionDescription": { "message": "競合する代替の本文を持つメールを通常の添付ファイルに変換します。" },
+
+  "config_title": { "message": "Rescue Conflicting Alternativesの設定" },
+
+  "config_debug_caption": { "message": "開発者向け" },
+
+  "config_debug_label": { "message": "デバッグモード" },
+  "config_all_caption": { "message": "すべての設定" }
+}
