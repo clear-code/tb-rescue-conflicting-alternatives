@@ -9,6 +9,7 @@ function sanitizeForHTMLText(text) {
   return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// eslint-disable-next-line no-unused-vars
 function renderExtraBodies(bodies) {
   const range = document.createRange();
   range.selectNodeContents(document.body);
