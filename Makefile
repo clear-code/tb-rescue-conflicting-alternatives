@@ -6,12 +6,18 @@ INCLUDES = chrome.manifest \
            content/messenger-overlay.xul \
            defaults/preferences/rescue-conflicting-alternatives.js
 
-all: $(PACKAGE)
+all: xpi
+
+xpi: $(PACKAGE)
+	cd webextensions && make && cp ./*.xpi ../
 
 $(PACKAGE):
 	zip -r -9 $@ $(INCLUDES)
 
+lint:
+	cd webextensions && make lint
+
 clean:
 	rm -f $(PACKAGE)
 
-.PHONY: all clean
+.PHONY: all lint clean
