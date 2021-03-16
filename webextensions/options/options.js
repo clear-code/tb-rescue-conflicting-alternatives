@@ -23,10 +23,7 @@ function onConfigChanged(key) {
 configs.$addObserver(onConfigChanged);
 
 window.addEventListener('DOMContentLoaded', async () => {
-  await Promise.all([
-    configs.$loaded,
-    initAccounts()
-  ]);
+  await configs.$loaded;
   options = new Options(configs);
   options.onReady();
 
